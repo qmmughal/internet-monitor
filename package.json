@@ -1,0 +1,42 @@
+{
+  "name": "wifi-monitor",
+  "version": "1.0.0",
+  "description": "Open-source real-time WiFi network analyzer, signal monitor, and device discovery dashboard",
+  "main": "src/index.html",
+  "keywords": [
+    "wifi",
+    "network",
+    "monitor",
+    "signal",
+    "scanner",
+    "dashboard",
+    "open-source",
+    "security",
+    "speed-test"
+  ],
+  "author": "WiFi Monitor Contributors",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/qmmughal/wifi-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/qmmughal/wifi-monitor/issues"
+  },
+  "homepage": "https://github.com/qmmughal/wifi-monitor#readme",
+  "scripts": {
+    "start": "npx serve src -p 3000",
+    "dev": "npx serve src -p 3000 --no-clipboard",
+    "test": "node tests/unit.test.js",
+    "lint": "npx eslint src/js/**/*.js",
+    "validate": "npx html-validate src/index.html"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "html-validate": "^8.0.0",
+    "serve": "^14.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#0f1629"/>
+      <stop offset="100%" stop-color="#0a0e1a"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="70%" r="60%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="blur">
+      <feGaussianBlur stdDeviation="1.5"/>
+    </filter>
+  </defs>
+  <!-- Background -->
+  <rect width="64" height="64" rx="14" fill="url(#bg)"/>
+  <rect width="64" height="64" rx="14" fill="url(#glow)"/>
+  <!-- WiFi arcs (outer) -->
+  <path d="M 10 36 A 22 22 0 0 1 54 36" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" opacity="0.35"/>
+  <!-- WiFi arcs (mid) -->
+  <path d="M 17 40 A 15 15 0 0 1 47 40" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" opacity="0.6"/>
+  <!-- WiFi arcs (inner) -->
+  <path d="M 24 44 A 8 8 0 0 1 40 44" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linecap="round" opacity="0.85"/>
+  <!-- Center dot -->
+  <circle cx="32" cy="49" r="3.5" fill="#38bdf8"/>
+  <!-- Glow dot -->
+  <circle cx="32" cy="49" r="6" fill="#38bdf8" opacity="0.15" filter="url(#blur)"/>
+  <!-- Pulse ring animation -->
+  <circle cx="32" cy="49" r="3.5" fill="none" stroke="#38bdf8" stroke-width="1" opacity="0.4">
+    <animate attributeName="r" from="3.5" to="10" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" from="0.4" to="0" dur="2s" repeatCount="indefinite"/>
+  </circle>
+</svg>
