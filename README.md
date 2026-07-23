@@ -19,6 +19,8 @@
 
 ---
 
+> **Runs entirely in the browser, no native WiFi hardware access.** Signal/scanner/device data uses `navigator.connection` and simulated data where the browser sandbox restricts real hardware access — see [Browser API Support](#-browser-api-support) below. For real hardware scanning, see [Extending to Native](#️-extending-to-nativeelectronnode).
+
 ## ✨ Features
 
 | Feature | Description |
@@ -64,13 +66,7 @@ python wifi-monitor.py
 
 ## 📸 Screenshots
 
-| Dashboard | Network Scanner |
-|---|---|
-| Real-time signal gauge + history chart | Nearby APs with signal quality indicators |
-
-| Device Discovery | Speed Test |
-|---|---|
-| Connected device cards with vendor info | Animated speedometer with download/upload |
+Screenshots coming soon — open `src/index.html` in a browser to see the live Dashboard, Network Scanner, Device Discovery, and Speed Test views in the meantime.
 
 ## 🏗️ Architecture
 
