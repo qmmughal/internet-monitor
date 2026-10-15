@@ -1,5 +1,26 @@
 # Troubleshooting Internet Monitor
 
+## "running scripts is disabled on this system" (Windows PowerShell)
+
+`.\.venv\Scripts\Activate.ps1` is blocked by the execution policy. Run once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+or use the environment without activating: `.\.venv\Scripts\internet-monitor serve`.
+
+## "internet-monitor is not recognized" / "command not found"
+
+The virtual environment is not active in this terminal. `cd` into the project folder and run
+`.\.venv\Scripts\Activate.ps1` (Windows) or `source .venv/bin/activate` (Linux/macOS). To use
+it from anywhere, see "Run it from any folder" in [INSTALLATION.md](INSTALLATION.md).
+
+## `serve` fails because the port is in use
+
+Another program (or a second `serve`) uses port 8765. Stop it, or pick another port:
+`internet-monitor serve --port 8770` and open `http://127.0.0.1:8770`.
+
 ## "no Wi-Fi interface found on this computer"
 
 The OS reports no wireless adapter. Common on desktops using Ethernet. Diagnostics still
@@ -39,6 +60,12 @@ Start **WLAN AutoConfig** in `services.msc` (or `sc start wlansvc` from an admin
 
 Internet Monitor needs NetworkManager. Systems using `iwd`, `wpa_supplicant` alone or
 `systemd-networkd` are not supported yet. Install `network-manager`, or open an issue.
+
+## The scan lists only my own network (Windows)
+
+Some adapters, notably USB Wi-Fi dongles, do not scan in the background while connected, so
+Windows' saved list goes stale. Internet Monitor asks Windows for a fresh scan first; if the list is
+still short, wait a few seconds and run `internet-monitor scan` again.
 
 ## Signal is "estimated"
 
