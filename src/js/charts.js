@@ -80,10 +80,10 @@ const ChartManager = (() => {
     const startAngle = Math.PI * 0.75;
     const endAngle   = Math.PI * 2.25;
 
-    const pct = SignalUtils.dbmToPercent(dbm) / 100;
-    const arcEnd = startAngle + pct * (endAngle - startAngle);
-
     ctx2d.clearRect(0, 0, W, H);
+    const hasValue = typeof dbm === 'number' && Number.isFinite(dbm);
+    const pct = hasValue ? SignalUtils.dbmToPercent(dbm) / 100 : 0;
+    const arcEnd = startAngle + pct * (endAngle - startAngle);
 
     // Background arc
     ctx2d.beginPath();
@@ -92,6 +92,11 @@ const ChartManager = (() => {
     ctx2d.lineWidth = 12;
     ctx2d.lineCap = 'round';
     ctx2d.stroke();
+
+    if (!hasValue) {  // unavailable: draw the empty track only
+      if (valueEl) valueEl.textContent = '—';
+      return;
+    }
 
     // Coloured arc with gradient
     const grad = ctx2d.createLinearGradient(cx - R, cy, cx + R, cy);
@@ -174,13 +179,13 @@ const ChartManager = (() => {
     if (!ctx) return;
     if (charts.networksBar) { charts.networksBar.destroy(); }
 
-    const sorted = [...networks].sort((a, b) => b.signal - a.signal).slice(0, 10);
+    const sorted = networks.filter(n => n.signal != null).sort((a, b) => b.signal - a.signal).slice(0, 10);
     const colors = sorted.map(n => `rgba(${n.signal >= -60 ? '52,211,153' : n.signal >= -75 ? '245,158,11' : '248,113,113'},0.8)`);
 
     charts.networksBar = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: sorted.map(n => n.ssid.substring(0, 14)),
+        labels: sorted.map(n => (n.ssid || '<hidden>').substring(0, 14)),
         datasets: [{
           label: 'Signal (dBm)',
           data: sorted.map(n => n.signal),
@@ -297,13 +302,13 @@ const ChartManager = (() => {
         labels: results.map((_, i) => `Test ${i + 1}`),
         datasets: [
           {
-            label: 'Download',
+            label: results.some(r => r.throughputSimulated) ? 'Download (simulated)' : 'Download',
             data: results.map(r => r.download),
             backgroundColor: 'rgba(52,211,153,0.7)',
             borderRadius: 4,
           },
           {
-            label: 'Upload',
+            label: results.some(r => r.throughputSimulated) ? 'Upload (simulated)' : 'Upload',
             data: results.map(r => r.upload),
             backgroundColor: 'rgba(56,189,248,0.7)',
             borderRadius: 4,

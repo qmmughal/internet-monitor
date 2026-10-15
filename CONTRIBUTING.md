@@ -59,39 +59,42 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 ## Development Setup
 
 ### Prerequisites
-- Any modern web browser (Chrome, Firefox, Safari, Edge)
-- Optional: Node.js 18+ for CLI tools and tests
-- Optional: Python 3.8+ for the CLI monitor
+- Python 3.9+ (core, CLI, local API)
+- Optional: Node.js 18+ for the dashboard tests
+- Any modern browser for the dashboard
 
-### Running the Dashboard
+### Setup
 
 ```bash
-# Simple: just open the file
-open src/index.html
-
-# Better: local dev server (avoids CORS issues)
-npx serve src -p 3000
-
-# Or Python
-python3 -m http.server 3000 --directory src
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
 ```
 
-### Running the CLI Tool
+### Running
 
 ```bash
-pip install rich psutil
-python cli/wifi-monitor.py --help
+wifi-monitor serve               # dashboard with real data: http://127.0.0.1:8765
+wifi-monitor serve --demo        # dashboard with labelled simulated data
+wifi-monitor diagnose            # troubleshooter
 ```
 
 ### Running Tests
 
 ```bash
-# Unit tests
-node tests/unit.test.js
-
-# Or with npm
-npm test
+python -m pytest -q              # Python: parsers, diagnostics, CLI, server
+npm test                         # Dashboard: loads the shipped src/js files
 ```
+
+Tests never need Wi-Fi hardware or network access. When you add support for new OS output,
+add a sample to `tests/python/fixtures.py` (replace real SSIDs/MACs with `02:…` addresses).
+
+### Data integrity rules for contributions
+
+- Never fall back to invented values. Return `mode="unavailable"` with an `error` (and a `hint`
+  when the user can fix it).
+- Label derived values `estimated`; label demo data `simulated`.
+- Treat SSIDs and all OS output as untrusted: escape before rendering, never pass to a shell.
 
 ---
 

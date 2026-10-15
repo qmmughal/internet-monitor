@@ -70,7 +70,7 @@
       <div class="topbar-actions">
         <div class="status-indicator" id="status-indicator">
           <span class="status-dot active" id="status-dot"></span>
-          <span id="status-text">Monitoring Active</span>
+          <span id="status-text">Starting…</span>
         </div>
         <button class="btn btn-primary" id="btn-refresh">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
@@ -79,11 +79,14 @@
       </div>
     </header>
 
+    <!-- Data-source banner: says whether values are measured or simulated -->
+    <div class="mode-banner" id="mode-banner" role="status" hidden></div>
+
     <!-- ── DASHBOARD SECTION ──────────────────────────────────── -->
     <section class="section" id="section-dashboard">
       <div class="section-header">
         <h1>WiFi Overview</h1>
-        <p>Real-time wireless network monitoring and analysis</p>
+        <p>Current Wi-Fi link, signal and connectivity</p>
       </div>
 
       <!-- KPI Cards -->
@@ -163,7 +166,7 @@
       <div class="charts-row">
         <div class="card flex-1">
           <div class="card-header">
-            <span class="card-title">Channel Utilization</span>
+            <span class="card-title">Access Points per Channel</span>
             <span class="badge badge-info" id="active-channel-badge">Ch —</span>
           </div>
           <div class="channel-map" id="channel-map">
@@ -179,9 +182,21 @@
             <div class="info-row"><span class="info-key">Frequency</span><span class="info-val" id="info-freq">—</span></div>
             <div class="info-row"><span class="info-key">Channel</span><span class="info-val" id="info-channel">—</span></div>
             <div class="info-row"><span class="info-key">IP Address</span><span class="info-val mono" id="info-ip">—</span></div>
-            <div class="info-row"><span class="info-key">MAC Address</span><span class="info-val mono" id="info-mac">—</span></div>
+            <div class="info-row"><span class="info-key">Link Rate</span><span class="info-val" id="info-rate">—</span></div>
             <div class="info-row"><span class="info-key">Gateway</span><span class="info-val mono" id="info-gateway">—</span></div>
+            <div class="info-row"><span class="info-key">Updated</span><span class="info-val small" id="info-updated">—</span></div>
           </div>
+        </div>
+      </div>
+
+      <!-- Connectivity check (requires the local API) -->
+      <div class="card mt-4" id="diagnostics-card">
+        <div class="card-header">
+          <span class="card-title">Connectivity Check</span>
+          <button class="btn btn-primary btn-sm" id="btn-diagnose">Run check</button>
+        </div>
+        <div class="diag-result" id="diagnostics-result" aria-live="polite">
+          <div class="empty-state">Tests the network link, router, DNS, HTTPS and latency, then explains what it finds. Nothing on your system is changed.</div>
         </div>
       </div>
     </section>
@@ -263,7 +278,8 @@
     <section class="section hidden" id="section-speedtest">
       <div class="section-header">
         <h1>Speed Test</h1>
-        <p>Measure your network's download speed, upload speed, and latency</p>
+        <p>Measure latency and jitter from this browser</p>
+        <p class="speed-note" id="speed-note"></p>
       </div>
       <div class="speedtest-wrapper">
         <div class="speedtest-hero">
@@ -322,7 +338,7 @@
     <section class="section hidden" id="section-history">
       <div class="section-header">
         <h1>Signal History</h1>
-        <p>Track and export your WiFi signal performance over time</p>
+        <p>Signal measurements recorded by this browser tab (stored locally in this browser)</p>
       </div>
       <div class="card">
         <div class="card-header">
@@ -343,10 +359,10 @@
         <div class="table-wrapper mt-4">
           <table class="data-table" id="history-table">
             <thead>
-              <tr><th>Timestamp</th><th>SSID</th><th>Signal (dBm)</th><th>Quality %</th><th>Channel</th><th>Band</th></tr>
+              <tr><th>Timestamp</th><th>SSID</th><th>Signal (dBm)</th><th>Quality %</th><th>Channel</th><th>Band</th><th>Data</th></tr>
             </thead>
             <tbody id="history-tbody">
-              <tr><td colspan="6" class="empty-state">No history recorded yet</td></tr>
+              <tr><td colspan="7" class="empty-state">No measurements recorded yet</td></tr>
             </tbody>
           </table>
         </div>
@@ -377,7 +393,7 @@
             <div class="alert-rule">
               <div class="alert-rule-info">
                 <div class="alert-rule-name">New Device</div>
-                <div class="alert-rule-desc">Notify when an unknown device joins</div>
+                <div class="alert-rule-desc">Notify when an unknown device appears (demo only for now)</div>
               </div>
               <div class="alert-rule-controls">
                 <label class="toggle"><input type="checkbox" id="rule-new-device" checked /><span class="toggle-slider"></span></label>
@@ -386,7 +402,7 @@
             <div class="alert-rule">
               <div class="alert-rule-info">
                 <div class="alert-rule-name">Channel Congestion</div>
-                <div class="alert-rule-desc">Notify when &gt;5 networks share your channel</div>
+                <div class="alert-rule-desc">After a scan, notify when &gt;5 other networks share your channel</div>
               </div>
               <div class="alert-rule-controls">
                 <label class="toggle"><input type="checkbox" id="rule-congestion" /><span class="toggle-slider"></span></label>
@@ -424,6 +440,7 @@
   <!-- Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/api.js"></script>
   <script src="js/charts.js"></script>
   <script src="js/scanner.js"></script>
   <script src="js/devices.js"></script>

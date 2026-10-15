@@ -2,80 +2,41 @@
 # https://github.com/qmmughal/wifi-monitor
 # llms.txt — Machine-readable project descriptor for LLMs and AI agents
 
-> WiFi Monitor is an open-source, browser-based WiFi network analyzer and monitoring dashboard
-> for developers. It provides real-time signal strength tracking, network scanning, device
-> discovery, speed testing, and alert rules — all running 100% locally with zero cloud dependency.
+> WiFi Monitor is an open-source, local-first Wi-Fi monitoring and connectivity
+> troubleshooting tool: a Python CLI, a loopback-only read-only local API, and a browser
+> dashboard. Every value is labelled live, estimated, simulated or unavailable; nothing is fabricated.
 
 ## Project
 
 - Name: WiFi Monitor
-- Version: 1.0.0
+- Version: 1.1.0-dev
 - License: MIT
 - Author: Qaiser Mehmood (qmmughal)
 - Repository: https://github.com/qmmughal/wifi-monitor
-- Homepage: https://github.com/qmmughal/wifi-monitor
-- Language: JavaScript (browser), Python (CLI)
-- Category: Networking / Developer Tools / Network Monitoring
+- Language: Python (core, CLI, API), JavaScript (dashboard)
 
-## Purpose
+## Implemented
 
-WiFi Monitor is designed for:
-- Developers debugging WiFi connectivity issues
-- Network administrators monitoring home/office WiFi health
-- Security researchers analyzing nearby network landscape
-- IoT builders tracking device connectivity
-- Students learning about wireless networking concepts
+- Connected Wi-Fi details from the OS: Windows netsh, Linux nmcli/iw, macOS system_profiler (macOS unverified on hardware)
+- Nearby access point list from the OS scan cache
+- Connectivity diagnostics: gateway, DNS, HTTPS, TCP latency/jitter, with evidence-based findings
+- CLI: status, scan, diagnose, monitor, capabilities, serve; --json; exit codes
+- Local API: GET /api/v1/status, /wifi/interfaces, /wifi/signal, /wifi/access-points, /network, /capabilities, /diagnostics; POST /api/v1/diagnostics
+- Dashboard with live/demo detection
 
-## Features
+## Not implemented (simulated only in demo mode, or planned)
 
-- Real-time RSSI/dBm signal gauge with animated history chart
-- Nearby network scanner: SSID, BSSID, band (2.4/5/6 GHz), channel, security protocol
-- Channel heatmap showing interference from overlapping networks
-- Device discovery: connected devices with MAC address and vendor lookup
-- Speed test: download, upload, latency, jitter measurement
-- Smart alert engine: weak signal, new device, channel congestion, high latency
-- Signal history with CSV and JSON export
-- Dark/light mode with system preference detection
-- Python CLI tool with native OS WiFi API integration (Linux/macOS/Windows)
-- Plugin architecture for extending with custom metrics
+- Download/upload throughput, LAN device discovery, history database, anomaly detection,
+  AI explanations, MCP server. See docs/IMPLEMENTATION_PLAN.md.
 
-## Architecture
+## Key files
 
-- Frontend: Vanilla HTML + CSS + JavaScript (no build step required)
-- CSS: Custom properties design system, dark/light themes, glassmorphism
-- JS Modules: app.js, scanner.js, charts.js, devices.js, speedtest.js, logger.js, utils.js
-- Charts: Chart.js v4 (CDN)
-- Storage: localStorage (signal history, alert history)
-- CLI: Python 3.8+ with rich, psutil
-- Tests: Zero-dependency Node.js unit tests (28 tests)
-- CI: GitHub Actions (HTML validation, ESLint, unit tests, Python check, security audit)
-
-## File Structure
-
-- src/index.html          — Main dashboard entry point
-- src/css/style.css       — Complete design system (dark/light themes)
-- src/js/app.js           — Main application controller
-- src/js/scanner.js       — WiFi network scanning engine
-- src/js/charts.js        — Chart.js visualization management
-- src/js/devices.js       — Device discovery module
-- src/js/speedtest.js     — Speed test module
-- src/js/logger.js        — Signal history, alerts, and export
-- src/js/utils.js         — Shared utilities and event bus
-- src/assets/logo.svg     — Animated SVG project logo
-- cli/wifi-monitor.py     — Python CLI tool
-- tests/unit.test.js      — Unit test suite (28 tests)
-- examples/custom-plugin.js — Plugin extensibility example
-- docs/ARCHITECTURE.md    — Module API reference and integration guides
-
-## Native Integration
-
-The simulation layer can be replaced with native system APIs:
-- Linux: nmcli, iwconfig
-- macOS: airport utility
-- Windows: netsh wlan
-- Node.js: node-wifi, wireless-tools packages
-- Electron: IPC bridge to native WiFi APIs
-- Python backend: FastAPI + pywifi + scapy
+- wifi_monitor/providers/   — per-OS Wi-Fi readers
+- wifi_monitor/diagnostics.py — troubleshooter rules
+- wifi_monitor/server.py    — local API
+- src/                      — dashboard
+- docs/CAPABILITIES.md      — what each platform can measure
+- docs/ARCHITECTURE.md      — design and extension guide
 
 ## Community
 

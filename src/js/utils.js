@@ -38,21 +38,34 @@ const SignalUtils = {
     return style.getPropertyValue('--signal-poor').trim();
   },
 
-  /** Convert channel to frequency */
-  channelToFreq(ch) {
-    if (ch >= 1 && ch <= 14) {
-      return ch === 14 ? '2.484 GHz' : `${2.407 + ch * 0.005} GHz`;
-    }
-    if (ch >= 36) return `${5.000 + (ch - 36) * 0.005 + Math.floor((ch - 36) / 4) * 0.020} GHz`;
-    return 'Unknown';
+  /**
+   * Centre frequency label for a channel. 6 GHz channel numbers overlap the
+   * 2.4/5 GHz ranges, so pass the band when it is known.
+   */
+  channelToFreq(ch, band) {
+    const mhz = SignalUtils.channelToMHz(ch, band);
+    return mhz ? `${(mhz / 1000).toFixed(3)} GHz` : 'Unknown';
   },
 
-  /** Determine band from channel */
+  channelToMHz(ch, band) {
+    band = band || SignalUtils.channelBand(ch);
+    if (band === '2.4 GHz') {
+      if (ch === 14) return 2484;
+      if (ch >= 1 && ch <= 13) return 2407 + 5 * ch;
+    } else if (band === '5 GHz') {
+      if (ch >= 32 && ch <= 177) return 5000 + 5 * ch;
+    } else if (band === '6 GHz') {
+      if (ch === 2) return 5935;
+      if (ch >= 1 && ch <= 233) return 5950 + 5 * ch;
+    }
+    return null;
+  },
+
+  /** Band from channel number alone; null when ambiguous (possible 6 GHz). */
   channelBand(ch) {
     if (ch >= 1 && ch <= 14) return '2.4 GHz';
-    if (ch >= 36 && ch <= 177) return '5 GHz';
-    if (ch >= 1 && ch <= 233 && ch > 177) return '6 GHz';
-    return 'Unknown';
+    if (ch >= 32 && ch <= 177) return '5 GHz';
+    return null;
   },
 };
 
@@ -113,6 +126,14 @@ const Sim = {
 };
 
 /* ── DOM Helpers ────────────────────────────────────────────────── */
+/** Escape text for interpolation into HTML. SSIDs and device names are attacker-controlled. */
+function escapeHTML(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[&<>"'`]/g, ch => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;',
+  })[ch]);
+}
+
 const $ = (sel, ctx = document) => ctx.querySelector(sel);
 const $$ = (sel, ctx = document) => [...ctx.querySelectorAll(sel)];
 
@@ -143,12 +164,16 @@ const Toast = {
       warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
       error:   '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
     };
-    const t = el('div', { class: `toast toast-${type}` },
+    const titleEl = el('div', { class: 'toast-title' });
+    titleEl.textContent = title;
+    let msgEl = null;
+    if (message) {
+      msgEl = el('div', { class: 'toast-message' });
+      msgEl.textContent = message;
+    }
+    const t = el('div', { class: `toast toast-${type}`, role: 'status' },
       el('div', { class: 'toast-icon', html: icons[type] || icons.info }),
-      el('div', { class: 'toast-body' },
-        el('div', { class: 'toast-title', html: title }),
-        message ? el('div', { class: 'toast-message', html: message }) : null,
-      ),
+      el('div', { class: 'toast-body' }, titleEl, msgEl),
     );
     this.container.appendChild(t);
     setTimeout(() => {
@@ -183,7 +208,12 @@ function downloadFile(content, filename, type = 'text/plain') {
 
 function arrayToCSV(headers, rows) {
   const header = headers.join(',');
-  const body = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
+  const cell = c => {
+    let s = String(c ?? '');
+    if (/^[=+@\t\r]/.test(s)) s = `'${s}`; // spreadsheet formula injection via SSIDs
+    return `"${s.replace(/"/g, '""')}"`;
+  };
+  const body = rows.map(r => r.map(cell).join(',')).join('\n');
   return `${header}\n${body}`;
 }
 
@@ -200,3 +230,8 @@ const EventBus = {
     this._listeners[event] = (this._listeners[event] ?? []).filter(f => f !== fn);
   },
 };
+
+/* Allow Node-based unit tests to load this file. */
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { SignalUtils, Sim, escapeHTML, arrayToCSV, EventBus };
+}

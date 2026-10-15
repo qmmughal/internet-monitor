@@ -510,6 +510,11 @@ body {
 
 .chart-card { flex: 2; }
 .chart-card canvas, .flex-1 canvas { width: 100% !important; padding: 16px; }
+/* Charts use maintainAspectRatio:false, so they need a fixed height or they grow without bound. */
+#signal-chart, #networks-bar-chart, #band-donut-chart, #history-chart, #speed-history-chart {
+  height: 260px !important;
+  max-height: 260px;
+}
 .chart-card-sm { flex: 1; min-width: 200px; }
 
 .flex-1 { flex: 1; }
@@ -991,3 +996,84 @@ body {
 .kpi-card:nth-child(2) { animation-delay: 0.1s; }
 .kpi-card:nth-child(3) { animation-delay: 0.15s; }
 .kpi-card:nth-child(4) { animation-delay: 0.2s; }
+
+/* ── Data provenance & diagnostics ──────────────────────────────── */
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn:focus-visible, .nav-item:focus-visible, input:focus-visible, select:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.muted { color: var(--text-muted); }
+.small { font-size: 12px; }
+code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  background: var(--bg-input);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.mode-banner {
+  margin: 16px 28px 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+}
+.mode-banner-demo {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: var(--accent-warn);
+  color: var(--text-primary);
+}
+
+.sim-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(245, 158, 11, 0.18);
+  color: var(--accent-warn);
+}
+.device-card .sim-tag { margin-bottom: 6px; }
+.conn-badge { margin-left: 4px; font-size: 10px; }
+
+.mode-pill { font-size: 11px; padding: 2px 8px; border-radius: 999px; background: var(--bg-input); }
+.mode-live { color: var(--accent-3); }
+.mode-estimated { color: var(--accent-warn); }
+.mode-simulated { color: var(--accent-warn); font-weight: 700; }
+
+.speed-note { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+.diag-result { padding: 4px 0; display: flex; flex-direction: column; gap: 10px; }
+.diag-overall { font-size: 15px; font-weight: 700; }
+.diag-overall-healthy { color: var(--accent-3); }
+.diag-overall-degraded { color: var(--accent-warn); }
+.diag-overall-offline { color: var(--accent-danger); }
+.diag-finding {
+  border-left: 3px solid var(--border);
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.diag-ok { border-left-color: var(--accent-3); }
+.diag-info { border-left-color: var(--accent); }
+.diag-warning { border-left-color: var(--accent-warn); }
+.diag-critical { border-left-color: var(--accent-danger); }
+.diag-title { font-weight: 600; font-size: 14px; }
+.diag-sev { font-size: 10px; letter-spacing: 0.05em; color: var(--text-secondary); margin-right: 4px; }
+.diag-evidence { margin: 0 0 0 18px; font-size: 12px; color: var(--text-secondary); }
+
+@media (max-width: 600px) {
+  .mode-banner { margin: 12px 16px 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
