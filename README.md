@@ -16,7 +16,8 @@
 
 ---
 
-WiFi Monitor reads your Wi-Fi link from the operating system, runs a step-by-step
+WiFi Monitor watches your internet connection of any kind — Wi-Fi, Ethernet, VPN or mobile data —
+shows which apps are downloading and uploading, reads your Wi-Fi link from the operating system, runs a step-by-step
 connectivity check (link → router → DNS → HTTPS → latency), and explains what it finds
 with the evidence behind each conclusion. It runs on your machine; nothing is uploaded.
 
@@ -28,6 +29,10 @@ with the evidence behind each conclusion. It runs on your machine; nothing is up
 
 | Feature | Status |
 |---|---|
+| Live download/upload rates for **any connection type** (Wi-Fi, Ethernet, VPN, mobile, virtual) | ✅ `traffic`, dashboard |
+| **Which apps use the most internet** — downloaded/uploaded per app (last 5 min … 7 days, or right now) | ✅ `apps` — Windows without admin, Linux (`ss`), macOS (`nettop`) |
+| **Live connections per app** — who each app is talking to right now, listening ports | ✅ `connections` |
+| Wi-Fi adapter health (broken driver, disabled adapter, Wi-Fi switched off) | ✅ Windows |
 | Connected Wi-Fi details: SSID, BSSID, signal, band/channel/frequency, radio, security, link rate | ✅ Windows (`netsh`), Linux (`nmcli` + `iw`); macOS implemented, not yet verified on hardware |
 | Nearby access point list | ✅ From the OS scan list (see [capabilities](docs/CAPABILITIES.md)) |
 | Connectivity troubleshooter with findings, evidence, likely cause, next step, confidence | ✅ CLI and dashboard |
@@ -48,7 +53,9 @@ with the evidence behind each conclusion. It runs on your machine; nothing is up
 
 ## 🚀 Quick start
 
-Requires **Python 3.9+**. No other dependencies are needed; [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
+Requires **Python 3.9+**. `pip install` also installs [psutil](https://github.com/giampaolo/psutil) (interface
+counters and per-app connections); [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
+No administrator rights are needed.
 
 ```bash
 git clone https://github.com/qmmughal/wifi-monitor.git
@@ -87,7 +94,10 @@ browsers cannot read Wi-Fi hardware, so all values are simulated and a banner sa
 ### All commands
 
 ```bash
-wifi-monitor status              # current Wi-Fi link, generation, gateway and local IP
+wifi-monitor status              # active connection (any type), Wi-Fi link, gateway and local IP
+wifi-monitor traffic -n 10       # live download/upload per interface
+wifi-monitor apps --window 1h    # which apps used the most data (or --live for right now)
+wifi-monitor connections         # which apps are connected to where, right now
 wifi-monitor scan                # nearby access points
 wifi-monitor diagnose            # connectivity troubleshooter
 wifi-monitor speedtest           # download/upload throughput (uses up to 50 MB)

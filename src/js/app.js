@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await DataSource.detect();
   applyModeUI();
   await LiveFeatures.init();
+  TrafficView.init();
   const hash = location.hash.replace('#', '');
   if (hash) navigateTo(hash); // after detection, so sections load from the right data source
   startMonitoring();
@@ -131,6 +132,7 @@ function navigateTo(section) {
     else Logger.renderAlerts();
   }
   if (section === 'speedtest') ChartManager.initSpeedHistoryChart(SpeedTest.getResults());
+  if (section === 'apps') TrafficView.show();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -207,6 +209,7 @@ async function tickMonitor() {
     if (snap.signal != null) State.lastGoodTs = snap.ts;
 
     renderSnapshot(snap);
+    TrafficView.onSnapshot(snap);
     if (!DataSource.usesApi()) { // with the API, the server records history and raises alerts
       Logger.logSignal(snap);
       Logger.checkAlerts(snap);
@@ -232,7 +235,12 @@ function renderSnapshot(snap) {
   // Status indicator
   const dot = document.getElementById('status-dot');
   let status;
-  if (snap.mode === 'unavailable') {
+  const wired = snap.traffic && snap.traffic.mode === 'live' && snap.traffic.primary_type
+    ? snap.traffic.primary_type : null;
+  if (snap.mode === 'unavailable' && wired) {
+    status = `Live · ${wired === 'ethernet' ? 'Ethernet' : wired}`;
+    dot.className = 'status-dot active';
+  } else if (snap.mode === 'unavailable') {
     status = 'Wi-Fi unavailable';
     dot.className = 'status-dot warning';
   } else if (snap.simulated) {
@@ -251,7 +259,10 @@ function renderSnapshot(snap) {
       `${SignalUtils.qualityLabel(snap.signal)} · ${MODE_TEXT[snap.signalMode] || snap.signalMode}`);
   } else {
     setText('kpi-signal-value', '—');
-    setText('kpi-signal-quality', snap.mode === 'unavailable' ? (snap.error || 'Unavailable') : 'Not reported by OS');
+    const why = snap.mode === 'unavailable' ? (snap.error || 'Unavailable') : 'Not reported by OS';
+    const short = /not working/.test(why) ? 'Wi-Fi adapter not working' : /disabled/.test(why) ? 'Wi-Fi adapter disabled' : why;
+    setText('kpi-signal-quality', short.length > 70 ? `${short.slice(0, 67)}…` : short);
+    document.getElementById('kpi-signal-quality').title = [why, snap.hint].filter(Boolean).join(' — ');
   }
 
   // Network KPI
@@ -260,6 +271,10 @@ function renderSnapshot(snap) {
     setText('kpi-network-value', name.length > 14 ? `${name.substring(0, 14)}…` : name);
     setText('kpi-network-band', [snap.standard?.generation, net.band, net.channel != null ? `Ch ${net.channel}` : null]
       .filter(Boolean).join(' · ') || '—');
+  } else if (wired && snap.traffic.primary) {
+    const name = snap.traffic.primary;
+    setText('kpi-network-value', name.length > 14 ? `${name.substring(0, 14)}…` : name);
+    setText('kpi-network-band', `${wired} connection · Wi-Fi not in use`);
   } else {
     setText('kpi-network-value', '—');
     setText('kpi-network-band', snap.hint || snap.error || '—');

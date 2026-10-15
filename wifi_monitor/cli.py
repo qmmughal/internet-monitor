@@ -108,10 +108,20 @@ def cmd_status(args) -> int:
     provider = get_provider(demo=args.demo)
     wifi = provider.interfaces()
     route = netinfo.default_route() if not args.demo else ProviderResult(mode=SIMULATED, source="demo", data={})
+    from .traffic import human_rate, measure
+
+    traffic = measure(0.5) if not args.demo else None
+    online = bool(route.ok or (traffic and traffic.get("primary")))
     if args.json:
         emit_json({"timestamp": utc_now(), "platform": platform.system(), "provider": provider.name,
-                   "wifi": wifi.to_dict(), "network": route.to_dict()})
-        return EXIT_OK if wifi.ok else EXIT_UNAVAILABLE
+                   "wifi": wifi.to_dict(), "network": route.to_dict(), "traffic": traffic})
+        return EXIT_OK if wifi.ok or online else EXIT_UNAVAILABLE
+
+    if traffic and traffic.get("mode") == "live" and traffic.get("primary"):
+        prim = next(i for i in traffic["interfaces"] if i["primary"])
+        link = f", {prim['link_speed_mbps']} Mbps link" if prim["link_speed_mbps"] else ""
+        out(f"[bold]Active connection:[/bold] {safe(prim['name'])} [dim]({prim['type']}{link})[/dim]  "
+            f"↓ {human_rate(prim['rx_bps'])}  ↑ {human_rate(prim['tx_bps'])}\n")
 
     demo_banner(args)
     if not wifi.ok:
@@ -150,7 +160,7 @@ def cmd_status(args) -> int:
                 ["Route interface", safe(d.get("interface"))], ["Mode", mode_tag(route.mode)]]
         table("Network", ["Field", "Value"], rows)
     out(f"[dim]Measured at {utc_now()} via {safe(wifi.source)}[/dim]")
-    return EXIT_OK if wifi.ok else EXIT_UNAVAILABLE
+    return EXIT_OK if wifi.ok or online else EXIT_UNAVAILABLE
 
 
 def _generation(iface) -> str:
@@ -219,7 +229,9 @@ def cmd_diagnose(args) -> int:
     if not args.json:
         out("[cyan]Running connectivity diagnostics…[/cyan]")
         on_stage = lambda s: out(f"  [dim]· {s}[/dim]")  # noqa: E731
-    report = run_diagnostics(cfg, Probes(wifi=provider.interfaces), on_stage=on_stage)
+    from .apps import activity_snapshot
+
+    report = run_diagnostics(cfg, Probes(wifi=provider.interfaces, activity=activity_snapshot), on_stage=on_stage)
     code = EXIT_OK if report.overall == "healthy" else EXIT_PROBLEM
     if args.json:
         emit_json(report.to_dict())

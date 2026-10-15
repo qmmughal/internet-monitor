@@ -23,6 +23,8 @@ SENSORS = [
     ("internet_ms", "Internet latency", "ms", "duration", "measurement"),
     ("dns_ms", "DNS lookup time", "ms", "duration", "measurement"),
     ("gateway_loss_pct", "Router packet loss", "%", None, "measurement"),
+    ("rx_bps", "Download rate", "B/s", "data_rate", "measurement"),
+    ("tx_bps", "Upload rate", "B/s", "data_rate", "measurement"),
 ]
 
 

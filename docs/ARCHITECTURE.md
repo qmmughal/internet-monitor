@@ -44,6 +44,9 @@ Design rules:
 | `netinfo.py` | Default gateway + local IP |
 | `probes.py` | Bounded ICMP ping (IP literals only), TCP connect/latency, DNS with timeout, HTTPS without redirects |
 | `diagnostics.py` | `run_diagnostics()` collects evidence; `classify()` produces findings |
+| `traffic.py` | Per-interface byte counters → rates for any connection type; primary interface; type inference |
+| `apps.py` | Per-app bytes (Windows usage records via WinRT, Linux `ss`, macOS `nettop`), live rates, connections per app |
+| `pwsh.py` | Runs fixed, package-internal PowerShell scripts with `-EncodedCommand` and parses JSON |
 | `history.py` | Ring buffer of `Sample`s, stats/percentiles/baseline, anomaly rules, `AlertManager`, roaming/disconnect events |
 | `collector.py` | Background sampler (Wi-Fi every cycle; router ping, TCP and DNS every N cycles) |
 | `channels.py` | Weighted neighbour score per channel, recommendations with stated assumptions |
@@ -85,6 +88,10 @@ Add the evidence collection to `run_diagnostics()` (with a timeout) and the rule
 | POST | `/api/v1/diagnostics` | Run diagnostics (one run at a time) |
 | GET | `/api/v1/wifi/standard` | Wi-Fi generation, band, width, MLO status, evidence |
 | GET | `/api/v1/channels` | Channel analysis and recommendations |
+| GET | `/api/v1/traffic` | Live rates per interface (also included in `/api/v1/status`) |
+| GET | `/api/v1/apps?window=` | Bytes per app over a period (60 s – 30 days) |
+| GET | `/api/v1/apps/live` | Per-app rates now |
+| GET | `/api/v1/connections` | Open connections grouped by app |
 | GET | `/api/v1/history?window=&limit=` | Samples (in memory) |
 | GET | `/api/v1/history/stats?window=` | Stats, baseline, thresholds, collector status |
 | GET | `/api/v1/history/export?format=csv\|json` | Download |
@@ -141,6 +148,7 @@ Vanilla JS, no build step, IIFE modules loaded in order:
 | `speedtest.js` | Real browser HTTP latency/jitter; simulated throughput in demo modes only |
 | `logger.js` | Browser-demo history/alerts in `localStorage` (with `mode`), CSV/JSON export |
 | `live.js` | API-backed history, alerts, channels, devices, speed test, survey, explanations |
+| `traffic.js` | Network activity card, Apps & Traffic page (interfaces, top apps, connections) |
 | `app.js` | Controller: polling (no overlapping requests), rendering, diagnostics card |
 
 All dynamic text is inserted with `textContent` or `escapeHTML()`; SSIDs are attacker-controlled.

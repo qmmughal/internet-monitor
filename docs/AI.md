@@ -16,7 +16,9 @@ It contains:
 - current Wi-Fi status and Wi-Fi generation,
 - one-hour statistics, baseline comparison, recent roaming/disconnect events and active alerts
   (when asked through `serve`),
-- the last speed test, if any.
+- the last speed test, if any,
+- current download/upload rates of the primary interface and the names and byte counts of the five
+  busiest apps in the last 5 minutes (no remote addresses or connection lists).
 
 By default SSIDs, BSSIDs/MAC addresses, device names and private IP addresses are replaced with
 placeholders such as `network-1`, `mac-2`, `lan-ip-1`. Public test endpoints (`1.1.1.1`, `8.8.8.8`)

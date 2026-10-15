@@ -298,7 +298,9 @@ def cmd_ask(args) -> int:
     if not args.no_diagnose:
         if not args.json:
             out("[cyan]Running diagnostics to give the explanation real data…[/cyan]")
-        data["diagnostics"] = run_diagnostics(p=Probes(wifi=provider.interfaces)).to_dict()
+        from .apps import activity_snapshot
+
+        data["diagnostics"] = run_diagnostics(p=Probes(wifi=provider.interfaces, activity=activity_snapshot)).to_dict()
     question = " ".join(args.question) if args.question else ""
     if args.preview:
         p = ai.preview(question, data, cfg["ai"])
@@ -400,8 +402,170 @@ def cmd_agent(args) -> int:
     return EXIT_OK
 
 
+# ── traffic / apps / connections (any connection type) ───────────
+
+def _window_seconds(text: str) -> int:
+    m = __import__("re").fullmatch(r"(\d+)\s*([smhd]?)", text.strip().lower())
+    if not m:
+        raise ValueError("window must look like 300, 5m, 1h or 1d")
+    return int(m.group(1)) * {"": 1, "s": 1, "m": 60, "h": 3600, "d": 86400}[m.group(2)]
+
+
+def cmd_traffic(args) -> int:
+    from . import traffic
+
+    sampler = traffic.InterfaceSampler()
+    first = sampler.sample()
+    if first.get("mode") == "unavailable":
+        out(f"[red]✗ {safe(first['error'])}[/red]")
+        if first.get("hint"):
+            out(f"  [yellow]→ {safe(first['hint'])}[/yellow]")
+        return EXIT_UNAVAILABLE
+    readings = []
+    try:
+        for i in range(args.count):
+            time.sleep(max(0.5, args.interval))
+            r = sampler.sample()
+            readings.append(r)
+            if args.json:
+                print(json.dumps(r), flush=True)
+                continue
+            shown = [x for x in r["interfaces"] if args.all or (x["type"] not in ("loopback",) and
+                                                                (x["is_up"] or x["primary"]))]
+            rows = [[("★ " if x["primary"] else "") + safe(x["name"]), x["type"],
+                     f"{x['link_speed_mbps']} Mbps" if x["link_speed_mbps"] else "—",
+                     f"[green]{traffic.human_rate(x['rx_bps'])}[/green]",
+                     f"[cyan]{traffic.human_rate(x['tx_bps'])}[/cyan]",
+                     f"{traffic.human_bytes(x['bytes_recv_total'])} / {traffic.human_bytes(x['bytes_sent_total'])}"]
+                    for x in shown]
+            table(f"Traffic ({r['interval_s']} s average) — {r['timestamp']}",
+                  ["Interface", "Type", "Link", "Download", "Upload", "Total ↓ / ↑ since boot"], rows)
+    except KeyboardInterrupt:
+        pass
+    if not args.json and readings:
+        out("[dim]★ = primary internet interface. Type is inferred from the interface name. "
+            "Rates are measured from OS byte counters.[/dim]")
+    return EXIT_OK
+
+
+def cmd_apps(args) -> int:
+    from . import apps, traffic
+
+    try:
+        window = _window_seconds(args.window)
+    except ValueError as exc:
+        out(f"[red]{safe(exc)}[/red]")
+        return EXIT_USAGE
+    if args.live and platform_system() == "Windows":
+        tracker = apps.AppRateTracker()
+        tracker.poll()
+        if not args.json:
+            out(f"[dim]Measuring per-app rates over {args.live_seconds} s (Windows updates its records about every "
+                "30 s, so allow at least 60 s)…[/dim]")
+        time.sleep(max(15, args.live_seconds))
+        res = tracker.poll()
+    else:
+        res = apps.usage(window)
+    if args.json:
+        emit_json(dict(res, window_s=window))
+        return EXIT_OK if res.get("mode") == "live" else EXIT_UNAVAILABLE
+    if res.get("mode") != "live":
+        out(f"[red]✗ {safe(res.get('error'))}[/red]")
+        if res.get("hint"):
+            out(f"  [yellow]→ {safe(res['hint'])}[/yellow]")
+        return EXIT_UNAVAILABLE
+    items = res["apps"][: args.top]
+    realtime = res.get("realtime") or args.live
+    rows = []
+    for a in items:
+        row = [safe(a["app"]), f"[green]{traffic.human_bytes(a['bytes_received'])}[/green]",
+               f"[cyan]{traffic.human_bytes(a['bytes_sent'])}[/cyan]"]
+        if realtime:
+            row += [traffic.human_rate(a.get("rx_bps")), traffic.human_rate(a.get("tx_bps"))]
+        row.append("yes" if a.get("running") else ("" if a.get("running") is None else "no"))
+        rows.append(row)
+    cols = ["App", "Downloaded", "Uploaded"] + (["↓ rate", "↑ rate"] if realtime else []) + ["Running"]
+    if res.get("realtime"):
+        title = f"Network use by app — last {res.get('sample_s')} s"
+    elif args.live:
+        title = f"Network use by app — last {res.get('interval_s')} s"
+    else:
+        title = f"Network use by app — last {args.window}"
+    if not items:
+        out("[yellow]No app used the network in this period (or the system has not recorded it yet).[/yellow]")
+    else:
+        table(title, cols, rows)
+    out(f"[dim]Source: {safe(res['source'])}. {safe(res.get('note') or '')}[/dim]")
+    return EXIT_OK
+
+
+def platform_system() -> str:
+    import platform as _p
+
+    return _p.system()
+
+
+def cmd_connections(args) -> int:
+    from . import apps
+
+    res = apps.connections()
+    if res.get("mode") != "live":
+        if args.json:
+            emit_json(res)
+        else:
+            out(f"[red]✗ {safe(res.get('error'))}[/red]")
+        return EXIT_UNAVAILABLE
+    items = res["apps"]
+    if args.app:
+        needle = args.app.lower()
+        items = [a for a in items if needle in a["app"].lower() or needle in a.get("process", "").lower()]
+    names = {}
+    if args.resolve:
+        names = apps.reverse_dns([r["ip"] for a in items for r in a["remotes"]])
+        for a in items:
+            for r in a["remotes"]:
+                r["hostname"] = names.get(r["ip"])
+    if args.json:
+        emit_json(dict(res, apps=items))
+        return EXIT_OK
+    for a in items[: args.top]:
+        listen = f", listening on {len(a['listening'])} port(s)" if a["listening"] else ""
+        out(f"\n[bold]{safe(a['app'])}[/bold] [dim]({safe(a['process'])}, pid {', '.join(map(str, a['pids'][:5]))})[/dim]"
+            f" — {a['established']} active connection(s){listen}")
+        for r in a["remotes"][:8]:
+            host = f" {safe(r['hostname'])}" if r.get("hostname") else ""
+            svc = f" ({r['service']})" if r["service"] else ""
+            out(f"   → {r['ip']}:{r['port']}{svc}{host} [dim]{r['protocol']} {r['state'] or ''}"
+                + (f" ×{r['count']}" if r["count"] > 1 else "") + "[/dim]")
+        exposed = [l for l in a["listening"] if l["all_interfaces"]]
+        if exposed:
+            out(f"   [yellow]listening on all interfaces: {', '.join(l['address'] for l in exposed[:5])}[/yellow]")
+    out(f"\n[dim]{safe(res['note'])}" + ("" if args.resolve else " Add --resolve to look up host names (sends DNS "
+                                         "queries).") + "[/dim]")
+    return EXIT_OK
+
+
 def register(sub, common) -> None:
     url_help = f"URL of a running `wifi-monitor serve` (default {DEFAULT_URL})"
+
+    tr = sub.add_parser("traffic", parents=[common], help="live upload/download per interface (Wi-Fi, Ethernet, VPN…)")
+    tr.add_argument("-i", "--interval", type=float, default=1.0, help="seconds per reading (default 1)")
+    tr.add_argument("-n", "--count", type=int, default=1, help="number of readings (default 1)")
+    tr.add_argument("--all", action="store_true", help="include loopback and down interfaces")
+    tr.set_defaults(func=cmd_traffic)
+
+    ap = sub.add_parser("apps", parents=[common], help="which apps use the most internet (download/upload per app)")
+    ap.add_argument("--window", default="1h", help="period on Windows, e.g. 5m, 1h, 1d (default 1h)")
+    ap.add_argument("--live", action="store_true", help="Windows: measure current per-app rates")
+    ap.add_argument("--live-seconds", type=int, default=60, help="measurement period for --live (default 60)")
+    ap.add_argument("--top", type=int, default=15, help="number of apps to show (default 15)")
+    ap.set_defaults(func=cmd_apps)
+
+    cn = sub.add_parser("connections", parents=[common], help="which apps are connected to where, right now")
+    cn.add_argument("--app", help="only apps whose name contains this text")
+    cn.add_argument("--resolve", action="store_true", help="reverse-DNS remote addresses (sends DNS queries)")
+    cn.add_argument("--top", type=int, default=20, help="number of apps to show (default 20)")
+    cn.set_defaults(func=cmd_connections)
 
     h = sub.add_parser("history", parents=[common], help="statistics and events from a running server")
     h.add_argument("--window", type=int, default=3600, help="seconds to summarise (default 3600)")

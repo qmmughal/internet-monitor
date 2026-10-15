@@ -15,18 +15,22 @@ from typing import Callable, List, Optional
 from . import netinfo, probes
 from .history import History, Sample
 from .models import SIMULATED
+from .traffic import InterfaceSampler
 
 
 class Collector:
     def __init__(self, provider, history: History, interval_s: float = 10, latency_every: int = 3,
                  demo: bool = False, route_fn=netinfo.default_route, ping_fn=probes.ping,
-                 tcp_fn=probes.tcp_latency, dns_fn=probes.resolve) -> None:
+                 tcp_fn=probes.tcp_latency, dns_fn=probes.resolve, traffic: Optional[InterfaceSampler] = None) -> None:
         self.provider = provider
         self.history = history
         self.interval_s = max(2.0, float(interval_s))
         self.latency_every = max(1, int(latency_every))
         self.demo = demo
         self._route, self._ping, self._tcp, self._dns = route_fn, ping_fn, tcp_fn, dns_fn
+        self.traffic = traffic if traffic is not None else (InterfaceSampler() if not demo else None)
+        if self.traffic is not None:
+            self.traffic.sample()  # baseline reading so the first cycle has a rate
         self._stop = threading.Event()
         self._thread: Optional[threading.Thread] = None
         self._cycle = 0
@@ -44,6 +48,12 @@ class Collector:
                        channel=i.channel, band=i.band)
         else:
             s = Sample(ts=now, mode=res.mode, connected=False, error=res.error)
+
+        if self.traffic is not None:
+            t = self.traffic.sample()
+            if t.get("mode") == "live":
+                s.iface, s.iface_type = t.get("primary"), t.get("primary_type")
+                s.rx_bps, s.tx_bps = t.get("rx_bps"), t.get("tx_bps")
 
         if not self.demo and self._cycle % self.latency_every == 0:
             route = self._route()

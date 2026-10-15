@@ -229,6 +229,17 @@ test('provider name is escaped', () => expect(answerHtml.includes('<i>p</i>')).t
 test('recommendations are labelled as not applied', () => expect(answerHtml.includes('not applied automatically')).toBe(true));
 test('features are off without the API', () => expect(LiveFeatures.enabled()).toBe(false));
 
+/* ── Traffic view formatting ───────────────────────────────────── */
+console.log('\nTrafficView');
+const { TrafficView } = loadBrowserModules(['utils.js', 'api.js', 'traffic.js'], ['TrafficView'], {
+  document: { getElementById: () => null },
+  location: { protocol: 'file:' },
+});
+test('rates are shown in bits per second', () => expect(TrafficView.rate(125000)).toBe('1.0 Mbps'));
+test('small rates in kbps', () => expect(TrafficView.rate(500)).toBe('4.0 kbps'));
+test('missing rate is a dash, not zero', () => expect(TrafficView.rate(null)).toBe('—'));
+test('bytes formatting', () => expect(TrafficView.bytes(1500000)).toBe('1.5 MB'));
+
 /* ═══════════════════════════════════════════════════════════════
    SUMMARY
    ═══════════════════════════════════════════════════════════════ */

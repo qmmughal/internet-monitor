@@ -76,6 +76,7 @@ class Probes:
     tcp_latency: Callable[..., probes.LatencySample] = probes.tcp_latency
     resolve: Callable[..., dict] = probes.resolve
     https: Callable[..., dict] = probes.https_check
+    activity: Optional[Callable[[], dict]] = None  # current traffic + top apps (optional)
 
 
 def run_diagnostics(config: Optional[DiagnosticsConfig] = None, p: Optional[Probes] = None, on_stage=None) -> Report:
@@ -118,6 +119,13 @@ def run_diagnostics(config: Optional[DiagnosticsConfig] = None, p: Optional[Prob
         p.tcp_latency(h, port, count=cfg.tcp_samples, timeout_s=cfg.probe_timeout_s).to_dict()
         for h, port in cfg.tcp_targets
     ]
+
+    if p.activity is not None:
+        stage("activity")
+        try:
+            ev["activity"] = p.activity()
+        except Exception as exc:  # activity is context, never a reason to fail diagnostics
+            ev["activity"] = {"error": str(exc)}
 
     findings = classify(ev, cfg)
     overall = "offline" if any(f.severity == CRITICAL for f in findings) else (
@@ -180,6 +188,7 @@ def classify(ev: dict, cfg: DiagnosticsConfig) -> List[Finding]:
         f.append(Finding(INFO, "Wi-Fi details unavailable",
                          [f"Wi-Fi: {wifi_state.get('error') or 'no connected Wi-Fi interface'}."]
                          + ([wifi_state["hint"]] if wifi_state.get("hint") else []),
+                         None if wifi_state.get("hint") else
                          "This device may be using a wired connection, or the OS withheld Wi-Fi data.",
                          None, "high"))
     if wifi and wifi.get("signal_dbm") and wifi["signal_dbm"].get("value") is not None:
@@ -299,6 +308,8 @@ def classify(ev: dict, cfg: DiagnosticsConfig) -> List[Finding]:
                          "Packet loss on the Wi-Fi link or upstream.",
                          "Run diagnostics again; if it persists, check signal strength and the router.", "low"))
 
+    _activity_findings(ev.get("activity"), f)
+
     if not any(x.severity in (WARNING, CRITICAL) for x in f):
         evidence = []
         if gw_icmp_ok and icmp.get("median_ms") is not None:
@@ -330,3 +341,39 @@ def _latency_cause(icmp: dict, gw_ok: bool, cfg: DiagnosticsConfig) -> str:
             return "Most of the delay is on the local Wi-Fi link."
         return "The local link is fast, so the delay is upstream (ISP or beyond)."
     return "Unknown whether the delay is local or upstream (router does not answer ping)."
+
+
+BUSY_BPS = 250_000  # ~2 Mbit/s
+
+
+def _rate(bps) -> str:
+    from .traffic import human_rate
+
+    return human_rate(bps) if bps is not None else "unknown"
+
+
+def _activity_findings(act: Optional[dict], f: List[Finding]) -> None:
+    """Report heavy traffic during the check and link it to latency problems."""
+    if not act or act.get("error"):
+        return
+    t = act.get("traffic") or {}
+    rx, tx = t.get("rx_bps"), t.get("tx_bps")
+    if rx is None and tx is None:
+        return
+    busy = (rx or 0) >= BUSY_BPS or (tx or 0) >= BUSY_BPS
+    apps = act.get("top_apps") or []
+    evidence = [f"{t.get('primary') or 'Primary interface'} ({t.get('primary_type') or 'unknown type'}): "
+                f"downloading {_rate(rx)}, uploading {_rate(tx)} during the check."]
+    if apps:
+        evidence.append("Busiest apps in the last 5 minutes: " + "; ".join(
+            f"{a['app']} ↓{a['bytes_received'] / 1e6:.1f} MB ↑{a['bytes_sent'] / 1e6:.1f} MB" for a in apps[:3]) + ".")
+    if busy:
+        f.append(Finding(INFO, "Heavy network use during the check", evidence,
+                         "Other traffic from this computer shares the connection and can slow everything else.",
+                         "Pause large transfers (cloud sync, updates, streaming) and run the check again.", "medium"))
+        for x in f:
+            if x.severity == WARNING and ("latency" in x.title.lower() or "jitter" in x.title.lower()):
+                x.evidence.append(f"This computer was transferring {_rate(rx)} down / {_rate(tx)} up at the time.")
+                x.likely_cause = (x.likely_cause or "") + " Heavy traffic from this computer may be a cause."
+    else:
+        f.append(Finding(INFO, "Network activity during the check", evidence, None, None, "high"))

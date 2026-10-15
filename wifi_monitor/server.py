@@ -29,7 +29,8 @@ from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
 from urllib.parse import parse_qs, unquote
 
-from . import __version__, ai, channels, config, devices, metrics, netinfo, standards, survey
+from . import __version__, ai, apps, channels, config, devices, metrics, netinfo, standards, survey
+from .traffic import InterfaceSampler
 from . import speedtest as speedtest_mod
 from .diagnostics import Probes, run_diagnostics
 from .history import History
@@ -100,12 +101,14 @@ class App:
 
     def __init__(self, demo: bool = False, provider=None, route_fn=None, diagnostics_fn=None,
                  history: Optional[History] = None, collector=None, cfg: Optional[dict] = None,
-                 speedtest_fn=None, discover_fn=None, ai_provider=None) -> None:
+                 speedtest_fn=None, discover_fn=None, ai_provider=None, traffic=None, usage_fn=None,
+                 connections_fn=None, rate_tracker=None) -> None:
         self.demo = demo
         self.cfg = cfg or config.load()
         self.provider = provider or get_provider(demo=demo)
         self.route_fn = route_fn or netinfo.default_route
-        self.diagnostics_fn = diagnostics_fn or (lambda: run_diagnostics(p=Probes(wifi=self.provider.interfaces)))
+        self.diagnostics_fn = diagnostics_fn or (lambda: run_diagnostics(
+            p=Probes(wifi=self.provider.interfaces, activity=apps.activity_snapshot)))
         self.speedtest_fn = speedtest_fn or speedtest_mod.run
         self.discover_fn = discover_fn or devices.discover
         self.ai_provider = ai_provider
@@ -117,6 +120,13 @@ class App:
         self.last_report: Optional[dict] = None
         self.last_speedtest: Optional[dict] = None
         self.last_devices: Optional[dict] = None
+        self.traffic = traffic or InterfaceSampler()
+        self.usage_fn = usage_fn or apps.usage
+        self.connections_fn = connections_fn or apps.connections
+        self.rate_tracker = rate_tracker
+        if self.rate_tracker is None and platform.system() == "Windows" and usage_fn is None:
+            self.rate_tracker = apps.AppRateTracker()
+        self.locks["apps"] = threading.Lock()
 
     # ── helpers ─────────────────────────────────────────────────
     def _wifi(self) -> ProviderResult:
@@ -151,6 +161,23 @@ class App:
                 "devices_scanned": devs is not None,
                 "note": "Observations only; a finding is not proof of an attack."}
 
+    def _traffic(self) -> dict:
+        if self.demo:
+            return {"mode": SIMULATED, "error": "traffic is not simulated in demo mode", "interfaces": []}
+        return self.traffic.sample(min_interval=1.0)
+
+    def _app_usage(self, window: int) -> dict:
+        if self.demo:
+            return {"mode": "unavailable", "error": "per-app usage is not available in demo mode", "apps": []}
+        return self.cache.get(f"apps:{window}", 20.0, lambda: self.usage_fn(window))
+
+    def _app_live(self) -> dict:
+        if self.demo:
+            return {"mode": "unavailable", "error": "per-app usage is not available in demo mode", "apps": []}
+        if self.rate_tracker is not None:  # Windows: difference the system usage records
+            return self.cache.get("apps:live", 15.0, self.rate_tracker.poll)
+        return self.cache.get("apps:live", 3.0, lambda: self.usage_fn(300))  # Linux/macOS sample in real time
+
     def ai_status(self) -> dict:
         a = self.cfg["ai"]
         external = None
@@ -172,6 +199,9 @@ class App:
             "events_1h": [e.to_dict() for e in self.history.event_list(3600)][-20:],
             "alerts": [a.to_dict() for a in self.history.alerts.list(include_acknowledged=False)][-10:],
             "speedtest": self.last_speedtest,
+            "traffic_now": {k: v for k, v in self._traffic().items() if k != "interfaces"},
+            "top_apps_5min": [{k: a.get(k) for k in ("app", "bytes_received", "bytes_sent")}
+                              for a in (self._app_usage(300).get("apps") or [])[:5]],
         }
 
     # ── GET ─────────────────────────────────────────────────────
@@ -189,6 +219,7 @@ class App:
                 "provider": self.provider.name, "demo": self.demo,
                 "wifi": self._wifi().to_dict(), "network": self._route().to_dict(),
                 "wifi_standard": self._standard(),
+                "traffic": self._traffic(),
                 "collector": self.collector.status() if self.collector else {"running": False},
                 "features": {"ai": self.ai_status()["enabled"]},
             }
@@ -206,6 +237,17 @@ class App:
             return (200, std) if std else (200, {"mode": "unavailable", "error": "no connected Wi-Fi interface"})
         if path == "/api/v1/channels":
             return 200, self._channels()
+        if path == "/api/v1/traffic":
+            return 200, self._traffic()
+        if path == "/api/v1/apps":
+            window = _int_param(q, "window", 300, 60, 30 * 86400)
+            return 200, dict(self._app_usage(window), window_s=window)
+        if path == "/api/v1/apps/live":
+            return 200, self._app_live()
+        if path == "/api/v1/connections":
+            if self.demo:
+                return 200, {"mode": "unavailable", "error": "not available in demo mode", "apps": []}
+            return 200, self.cache.get("connections", 3.0, self.connections_fn)
         if path == "/api/v1/network":
             return 200, self._route().to_dict()
         if path == "/api/v1/capabilities":

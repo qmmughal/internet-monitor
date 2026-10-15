@@ -9,6 +9,8 @@ WiFi Monitor is local-first. It has no accounts, no telemetry and no analytics.
   with **History → Clear** or `POST /api/v1/history/clear`.
 - CLI logs — only written when you pass `-o FILE`, `history --export`, or answer the export prompt.
 - Browser-demo history — stored in your browser's `localStorage`; cleared with **History → Clear**.
+- Per-app usage and open connections (app names, remote IP addresses) — read from the OS on demand,
+  shown locally, never stored by WiFi Monitor.
 - Small JSON files in the config directory: known devices and names, router MAC, survey points,
   hub token hashes ([CONFIG.md](CONFIG.md)). Delete them at any time.
 
@@ -23,7 +25,8 @@ Nothing is uploaded, but some features make network requests:
 | `serve` background collector (every 3rd sample, default every 30 s) | ping to your router, one TCP handshake to `1.1.1.1:443`, one DNS lookup of `www.cloudflare.com` | A few hundred bytes; no measurement data. Disable with `serve --no-collect` |
 | `speedtest` | `speed.cloudflare.com` | Download/upload of zero-filled data, up to the `--max-mb` budget (default 50 MB) |
 | `devices --probe` (opt-in) | One ping to each address of your local private /24 | Nothing beyond the probe; never leaves your LAN |
-| AI explanations (off by default) | The provider you configure (Anthropic API, or your OpenAI-compatible/local server) | A summary of measurements with SSIDs, MACs, device names and private IPs **redacted** by default. Preview with `ask --preview` |
+| AI explanations (off by default) | The provider you configure (Anthropic API, or your OpenAI-compatible/local server) | A summary of measurements with SSIDs, MACs, device names and private IPs **redacted** by default; includes current upload/download rates and the names of the 5 busiest apps (no remote addresses). Preview with `ask --preview` |
+| `connections --resolve` (opt-in) | Your DNS resolver | Reverse-DNS (PTR) queries for the remote IPs shown |
 | Agents (opt-in) | Your own hub | Samples without SSID/BSSID unless `--include-identifiers` |
 | MQTT (opt-in) | Your broker | Metrics only; no SSID/BSSID |
 | Dashboard latency test | `https://www.cloudflare.com/cdn-cgi/trace` (HEAD) | Ordinary browser request |

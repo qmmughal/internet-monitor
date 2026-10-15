@@ -43,7 +43,10 @@ _SAMPLE_FIELDS = {
     "signal_dbm": (int, type(None)), "signal_mode": (str, type(None)), "channel": (int, type(None)),
     "band": (str, type(None)), "gateway_ms": (int, float, type(None)), "gateway_loss_pct": (int, float, type(None)),
     "internet_ms": (int, float, type(None)), "dns_ms": (int, float, type(None)), "error": (str, type(None)),
+    "iface": (str, type(None)), "iface_type": (str, type(None)),
+    "rx_bps": (int, float, type(None)), "tx_bps": (int, float, type(None)),
 }
+_OPTIONAL_FIELDS = {"iface", "iface_type", "rx_bps", "tx_bps"}  # absent in reports from older agents
 _NAME_OK = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.")
 
 
@@ -125,6 +128,9 @@ def parse_sample(raw: dict) -> Sample:
             raise ValueError(f"sample.{k} is required")
         if isinstance(v, bool) and k != "connected":
             raise ValueError(f"sample.{k} has the wrong type")
+        if v is None and k in _OPTIONAL_FIELDS:
+            clean[k] = None
+            continue
         if not isinstance(v, types):
             raise ValueError(f"sample.{k} has the wrong type")
         if isinstance(v, str):

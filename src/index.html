@@ -29,6 +29,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
         Network Scanner
       </a>
+      <a href="#apps" class="nav-item" id="nav-apps" data-section="apps">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><polyline points="8 11 12 15 16 11"/><path d="M4 21h16"/><path d="M20 3v6M17 6l3-3 3 3"/></svg>
+        Apps &amp; Traffic
+      </a>
       <a href="#devices" class="nav-item" id="nav-devices" data-section="devices">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
         Devices
@@ -85,8 +89,8 @@
     <!-- ── DASHBOARD SECTION ──────────────────────────────────── -->
     <section class="section" id="section-dashboard">
       <div class="section-header">
-        <h1>WiFi Overview</h1>
-        <p>Current Wi-Fi link, signal and connectivity</p>
+        <h1>Network Overview</h1>
+        <p>Your connection (Wi-Fi, Ethernet, VPN or mobile), Wi-Fi signal and activity</p>
       </div>
 
       <!-- KPI Cards -->
@@ -189,6 +193,23 @@
         </div>
       </div>
 
+      <!-- Network activity: any connection type (requires the local API) -->
+      <div class="card mt-4" id="activity-card" hidden>
+        <div class="card-header">
+          <span class="card-title">Network Activity</span>
+          <span class="small muted" id="activity-conn">—</span>
+        </div>
+        <div class="activity-row">
+          <div class="activity-rates">
+            <div class="stat-tile"><div class="stat-title">Download now</div><div class="stat-value" id="activity-rx">—</div></div>
+            <div class="stat-tile"><div class="stat-title">Upload now</div><div class="stat-value" id="activity-tx">—</div></div>
+          </div>
+          <div class="activity-chart"><canvas id="traffic-chart" height="160"></canvas></div>
+        </div>
+        <div class="small muted mt-2">Busiest apps, last 5 minutes · <a href="#apps" class="link" id="activity-more">details</a></div>
+        <div class="diag-result" id="activity-apps"></div>
+      </div>
+
       <!-- Connectivity check (requires the local API) -->
       <div class="card mt-4" id="diagnostics-card">
         <div class="card-header">
@@ -260,6 +281,60 @@
         <div class="card-header"><span class="card-title">Channel Recommendation</span></div>
         <div class="diag-result" id="channel-result">
           <div class="empty-state">Run a scan to analyse channel congestion.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── APPS & TRAFFIC SECTION ─────────────────────────────── -->
+    <section class="section hidden" id="section-apps">
+      <div class="section-header">
+        <h1>Apps &amp; Traffic</h1>
+        <p>What is using your internet connection — on Wi-Fi, Ethernet, VPN or mobile data</p>
+      </div>
+      <div class="empty-state" id="apps-unavailable" hidden>
+        Per-app usage and live traffic need real measurements. Start <code>wifi-monitor serve</code> and open
+        <code>http://127.0.0.1:8765</code>.
+      </div>
+      <div id="apps-content">
+        <div class="card">
+          <div class="card-header"><span class="card-title">Network Interfaces</span><span class="small muted">live, every 3 s</span></div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th scope="col">Interface</th><th scope="col">Type</th><th scope="col">Link</th><th scope="col">Address</th><th scope="col">Download</th><th scope="col">Upload</th></tr></thead>
+              <tbody id="iface-tbody"><tr><td colspan="6" class="empty-state">Waiting for the first reading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card mt-4">
+          <div class="card-header">
+            <span class="card-title">Top Apps by Data</span>
+            <div class="card-actions">
+              <label class="visually-hidden" for="apps-window">Period</label>
+              <select class="select-sm" id="apps-window">
+                <option value="live">Right now</option>
+                <option value="300">Last 5 min</option>
+                <option value="3600" selected>Last hour</option>
+                <option value="86400">Last 24 h</option>
+                <option value="604800">Last 7 days</option>
+              </select>
+              <button type="button" class="btn btn-outline btn-sm" id="btn-apps-refresh">Refresh</button>
+            </div>
+          </div>
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead><tr><th scope="col">App</th><th scope="col">Downloaded</th><th scope="col">Uploaded</th><th scope="col">Share</th><th scope="col">Running</th></tr></thead>
+              <tbody id="apps-tbody"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+            </table>
+          </div>
+          <div class="small muted" id="apps-note"></div>
+        </div>
+        <div class="card mt-4">
+          <div class="card-header">
+            <span class="card-title">Live Connections by App</span>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-conn-refresh">Refresh</button>
+          </div>
+          <div class="diag-result" id="conn-list"><div class="empty-state">Loading…</div></div>
+          <div class="small muted">Shows who each app is connected to right now — not how much data flows. Remote addresses are not looked up.</div>
         </div>
       </div>
     </section>
@@ -490,6 +565,7 @@
   <script src="js/speedtest.js"></script>
   <script src="js/logger.js"></script>
   <script src="js/live.js"></script>
+  <script src="js/traffic.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

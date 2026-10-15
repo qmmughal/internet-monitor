@@ -130,7 +130,15 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started
 - ✅ Hub + agents: hashed role-separated tokens, revocation, TLS-or-explicit-opt-out, rate/size limits.
 - ✅ MQTT with Home Assistant discovery (optional dependency).
 
+### Session 3 — any connection type and per-app usage
+- ✅ Interface-agnostic traffic monitoring (psutil), throughput in history/metrics/MQTT/hub.
+- ✅ Per-app bytes: Windows usage records (WinRT, no admin), Linux `ss`, macOS `nettop` (unverified).
+- ✅ Per-app rates now and open connections per app; dashboard Apps & Traffic page.
+- ✅ Windows Wi-Fi adapter health (found a real code-43 failure on the dev machine).
+
 ### Remaining / ideas
+- ⬜ Real-time (sub-second) per-app rates on Windows would need ETW or TCP EStats, which require admin.
+- ⬜ Per-app UDP attribution on Linux (would need eBPF/pcap and root).
 - ⬜ Verify Windows parsing on a machine with a Wi-Fi adapter; Linux and macOS on real hardware.
 - ⬜ Non-English `netsh` parsing (needs sample output per locale), or native WLAN API via ctypes.
 - ⬜ Hub token expiry and mTLS; hub persistence.

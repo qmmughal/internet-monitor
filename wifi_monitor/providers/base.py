@@ -39,7 +39,8 @@ class WifiProvider:
             if iface.connected:
                 return ProviderResult(mode=res.mode, source=res.source, data=iface, timestamp=res.timestamp)
         detail = "no Wi-Fi interface is connected" if ifaces else "no Wi-Fi interface found"
-        return ProviderResult(mode="unavailable", source=res.source, error=detail, timestamp=res.timestamp)
+        return ProviderResult(mode="unavailable", source=res.source, error=detail, hint=res.hint,
+                              timestamp=res.timestamp)
 
 
 def command_failure(cmd: CommandResult, tool: str) -> Optional[ProviderResult]:

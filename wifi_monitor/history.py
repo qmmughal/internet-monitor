@@ -46,6 +46,10 @@ class Sample:
     internet_ms: Optional[float] = None
     dns_ms: Optional[float] = None
     error: Optional[str] = None
+    iface: Optional[str] = None       # primary interface (any type: Wi-Fi, Ethernet, VPN…)
+    iface_type: Optional[str] = None
+    rx_bps: Optional[float] = None    # bytes/second received on the primary interface
+    tx_bps: Optional[float] = None
 
     def to_dict(self) -> dict:
         d = asdict(self)
@@ -108,7 +112,7 @@ def summarize(values: List[float]) -> Optional[dict]:
     }
 
 
-METRICS = ("signal_dbm", "gateway_ms", "gateway_loss_pct", "internet_ms", "dns_ms")
+METRICS = ("signal_dbm", "gateway_ms", "gateway_loss_pct", "internet_ms", "dns_ms", "rx_bps", "tx_bps")
 
 
 class AlertManager:
@@ -255,7 +259,8 @@ class History:
     def to_csv(self) -> str:
         buf = io.StringIO()
         fields = ["timestamp", "mode", "is_simulated", "connected", "ssid", "bssid", "signal_dbm", "signal_mode",
-                  "channel", "band", "gateway_ms", "gateway_loss_pct", "internet_ms", "dns_ms", "error"]
+                  "channel", "band", "gateway_ms", "gateway_loss_pct", "internet_ms", "dns_ms", "iface", "iface_type",
+                  "rx_bps", "tx_bps", "error"]
         w = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
         w.writeheader()
         for s in self.window(None):
@@ -272,6 +277,18 @@ class History:
 def _prior(history: List[Sample], attr: str, n: int = 30) -> List[float]:
     vals = [getattr(s, attr) for s in history[:-1] if getattr(s, attr) is not None]
     return vals[-n:]
+
+
+BUSY_BPS = 250_000  # ~2 Mbit/s: enough traffic to plausibly fill an upload link and raise latency
+
+
+def _busy_evidence(s: Sample) -> List[str]:
+    out = []
+    if s.tx_bps and s.tx_bps >= BUSY_BPS:
+        out.append(f"this computer was uploading {round(s.tx_bps * 8 / 1e6, 1)} Mbit/s (uploads often raise latency)")
+    if s.rx_bps and s.rx_bps >= BUSY_BPS:
+        out.append(f"this computer was downloading {round(s.rx_bps * 8 / 1e6, 1)} Mbit/s")
+    return out
 
 
 def detect_anomalies(history: List[Sample], events: List[Event], th: dict) -> List[dict]:
@@ -311,12 +328,14 @@ def detect_anomalies(history: List[Sample], events: List[Event], th: dict) -> Li
         if val is not None and len(prior) >= MIN_BASELINE:
             med = statistics.median(prior)
             if val >= max(th["latency_min_ms"], med * th["latency_spike_factor"]):
+                evidence = [f"current {val} ms", f"median of last {len(prior)} measurements: {round(med, 1)} ms",
+                            f"rule: ≥ {th['latency_spike_factor']}× median and ≥ {th['latency_min_ms']} ms"]
+                busy = _busy_evidence(cur)
                 found.append(dict(
                     rule=f"{attr}_spike", severity="warning", title=f"Latency spike to the {label}",
                     detail=f"{label.capitalize()} latency {val} ms is {round(val / max(med, 0.1), 1)}× the "
-                           f"recent median.",
-                    evidence=[f"current {val} ms", f"median of last {len(prior)} measurements: {round(med, 1)} ms",
-                              f"rule: ≥ {th['latency_spike_factor']}× median and ≥ {th['latency_min_ms']} ms"]))
+                           f"recent median." + (" Heavy traffic was in progress at the same time." if busy else ""),
+                    evidence=evidence + busy))
 
     if cur.gateway_loss_pct:
         found.append(dict(

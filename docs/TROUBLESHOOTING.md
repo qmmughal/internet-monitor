@@ -11,6 +11,19 @@ Windows 11 24H2+ blocks `netsh wlan` without Location access. Open **Settings �
 security → Location**, enable *Location services* and *Let desktop apps access your
 location*, then retry.
 
+## "Wi-Fi adapter … is not working" (Windows)
+
+Windows has stopped the adapter because of a device or driver problem (shown with the Device
+Manager code). Open **Device Manager › Network adapters**, check the device, try updating or
+reinstalling the driver, or restart. Everything except Wi-Fi-specific readings keeps working over
+other connections (e.g. Ethernet).
+
+## Per-app list is empty or misses the last minute
+
+On Windows the per-app numbers come from the system's usage records, which are updated about every
+30–60 seconds. Wait a minute and refresh. On Linux, only TCP traffic of your own processes is
+attributed unless you run as root. "psutil is not installed" means run `pip install psutil`.
+
 ## "unrecognised netsh output" (Windows)
 
 `netsh` labels are translated on non-English Windows and WiFi Monitor only parses English

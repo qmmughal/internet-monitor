@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased] — 1.3.0
+
+Focus: monitor internet of any kind, and show which apps use it.
+
+### Added
+- **Any connection type**: live download/upload per interface (Wi-Fi, Ethernet, VPN, mobile, virtual),
+  primary-interface detection; throughput recorded in history, stats, CSV, Prometheus, MQTT and hub.
+- **Per-app usage** (`apps`, Apps & Traffic page): bytes downloaded/uploaded per app over any period and
+  per-app rates now — Windows via the system usage records (no admin), Linux via `ss`, macOS via `nettop`.
+- **Live connections per app** (`connections`): remote addresses, services, states, listening ports.
+- **Wi-Fi adapter health** on Windows: broken driver (Device Manager code), disabled adapter, Wi-Fi off.
+- Diagnostics report network activity and the busiest apps, and link heavy traffic to latency problems.
+- Dashboard: Network Activity card with live chart; new Apps & Traffic page; status shows the active
+  connection of any type.
+
+### Changed
+- `psutil` is now a dependency.
+- `status` exits 0 when online through any connection, even without Wi-Fi.
+
 ## [Unreleased] — 1.2.0
 
 Focus: everything beyond the core, except a database and an MCP server (deliberately out of scope).

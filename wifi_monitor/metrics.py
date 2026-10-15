@@ -56,6 +56,10 @@ def add_sample(ex: Exposition, s: Optional[Sample], labels: Dict[str, str]) -> N
            None if s.gateway_loss_pct is None else s.gateway_loss_pct / 100.0, labels)
     ex.add("wifi_monitor_internet_latency_ms", "gauge", "TCP handshake time to 1.1.1.1:443.", s.internet_ms, labels)
     ex.add("wifi_monitor_dns_ms", "gauge", "System resolver lookup time.", s.dns_ms, labels)
+    ex.add("wifi_monitor_receive_bytes_per_second", "gauge",
+           "Bytes/s received on the primary interface (any connection type).", s.rx_bps, labels)
+    ex.add("wifi_monitor_transmit_bytes_per_second", "gauge",
+           "Bytes/s sent on the primary interface (any connection type).", s.tx_bps, labels)
     ex.add("wifi_monitor_last_sample_timestamp_seconds", "gauge", "Unix time of the latest sample.", s.ts, labels)
 
 

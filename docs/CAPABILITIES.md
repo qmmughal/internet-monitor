@@ -67,6 +67,27 @@ utilization or interference.
 
 No feature requires administrator/root rights.
 
+## Traffic and per-app usage (any connection type)
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Live rates per interface (Wi-Fi, Ethernet, VPN, mobile, virtual) | ✅ psutil | ✅ psutil | ✅ psutil |
+| Primary interface | ✅ owner of the default-route IP | ✅ | ✅ |
+| Interface type | inferred from the name (labelled) | inferred | inferred |
+| Bytes per app over a period | ✅ Windows network usage records (Settings › Data usage), any window up to 30 days, includes apps that have exited | — | — |
+| Per-app rates now | ✅ difference of those records; lags ~30–60 s | ✅ `ss -tinp` per-socket TCP counters (own processes; all with root); real time | ✅ `nettop` deltas (unverified on hardware) |
+| Open connections per app (remote IP, port, state) | ✅ psutil | ✅ psutil (own processes; all with root) | ⚠️ psutil needs administrator rights |
+| Admin required | No | No (root shows other users' processes) | For connections only |
+
+Measured on Windows: a 20 MB download appeared as 19.77 MB in the per-app records 25–40 s later.
+Connections show *who* an app talks to, not how much; UDP traffic on Linux is not attributed per app.
+
+## Wi-Fi adapter health (Windows)
+
+When `netsh` reports no wireless interface, WiFi Monitor checks whether a Wi-Fi adapter exists but
+is broken (Device Manager problem code, e.g. code 43), disabled, or switched off (airplane mode /
+radio off), and says which. It never changes device settings.
+
 ## Wi-Fi generation and channel width
 
 | | Windows | Linux | macOS |
