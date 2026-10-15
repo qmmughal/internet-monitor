@@ -38,6 +38,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   TrafficView.init();
   const hash = location.hash.replace('#', '');
   if (hash) navigateTo(hash); // after detection, so sections load from the right data source
+  if (DataSource.mode() === 'live') { // fill the channel map from the OS scan list without a click
+    NetworkScanner.scan().then(() => NetworkScanner.renderChannelMap(
+      State.snap?.network?.channel ?? null, State.snap?.network?.band ?? null)).catch(() => {});
+  }
   startMonitoring();
 });
 

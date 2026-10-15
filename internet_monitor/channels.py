@@ -72,18 +72,20 @@ def analyze(aps: List[AccessPoint], mode: str, own_ssid: Optional[str] = None) -
         scores.sort(key=lambda s: (s["score"], s["channel"]))
 
         current = sorted({ap.channel for ap in own})
+        maybe_own = possibly_own(neighbours, own)
         entry = {
             "access_points": len(in_band),
             "neighbour_access_points": len(neighbours),
             "channels": sorted(per_channel.values(), key=lambda c: c["channel"]),
             "your_channels": current,
+            "possibly_yours": [{"ssid": ap.ssid, "channel": ap.channel, "bssid": ap.bssid} for ap in maybe_own],
             "candidates": scores,
             "recommendation": None,
         }
         if mode == SIMULATED:
             entry["recommendation_withheld"] = "Recommendations are only made from real scans, not demo data."
         elif in_band or own_ssid:
-            entry["recommendation"] = _recommend(band, scores, current, len(neighbours))
+            entry["recommendation"] = _recommend_with_own(band, scores, current, len(neighbours), maybe_own)
         bands[band] = entry
 
     return {
@@ -101,6 +103,53 @@ def analyze(aps: List[AccessPoint], mode: str, own_ssid: Optional[str] = None) -
             "This is a suggestion only. Internet Monitor never changes router settings.",
         ],
     }
+
+
+def _oui(bssid: Optional[str]) -> Optional[str]:
+    """Vendor prefix of a BSSID, or None for locally administered (randomised/virtual) addresses."""
+    if not bssid or len(bssid) < 8:
+        return None
+    try:
+        if int(bssid[:2], 16) & 0x02:
+            return None
+    except ValueError:
+        return None
+    return bssid[:8].lower()
+
+
+def possibly_own(neighbours: List[AccessPoint], own: List[AccessPoint]) -> List[AccessPoint]:
+    """Neighbours from the same router vendor as your network — often your own extra SSIDs or mesh nodes.
+
+    This is a hint, not proof: an ISP may give neighbours the same router model.
+    """
+    own_ouis = {o for o in (_oui(ap.bssid) for ap in own) if o}
+    return [ap for ap in neighbours if _oui(ap.bssid) in own_ouis]
+
+
+def _names(aps: List[AccessPoint]) -> str:
+    return ", ".join(f"{ap.ssid or '<hidden>'} (ch {ap.channel})" for ap in aps)
+
+
+def _recommend_with_own(band: str, scores: List[dict], current: List[int], neighbours: int,
+                        maybe_own: List[AccessPoint]) -> dict:
+    """Never suggest moving onto a channel used by an access point that is probably yours."""
+    taken = {ap.channel for ap in maybe_own}
+    if not taken:
+        return _recommend(band, scores, current, neighbours)
+    free = [s for s in scores if s["channel"] not in taken]
+    note = (f" {_names(maybe_own)} use the same router brand as your network and are probably your own access "
+            "points; their channels are not suggested.")
+    if not free or all(s["channel"] in current for s in free):
+        layout = sorted(taken | set(current))
+        return {"channel": current[0] if current else None, "change_recommended": False,
+                "reason": f"Your network and access points that are probably yours already use channels "
+                          f"{', '.join(map(str, layout))}" + (" — the standard non-overlapping layout. Keep it."
+                                                              if band == "2.4 GHz" and set(layout) >= {1, 6, 11}
+                                                              else ". Keep your access points on different channels.")
+                          + note, "confidence": "medium"}
+    rec = _recommend(band, free, current, neighbours)
+    rec["reason"] += note
+    return rec
 
 
 def _recommend(band: str, scores: List[dict], current: List[int], neighbours: int) -> dict:

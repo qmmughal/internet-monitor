@@ -27,6 +27,14 @@ Focus: monitor internet of any kind, and show which apps use it.
 - Dashboard: Network Activity card with live chart; new Apps & Traffic page; status shows the active
   connection of any type.
 
+### Fixed (from testing on real Wi-Fi hardware)
+- Windows: request a fresh Wi-Fi scan before listing access points; some USB adapters do not
+  scan in the background, so the cached list held only the connected network.
+- Channel advice no longer suggests moving onto a channel used by access points that are probably
+  your own (same router brand); a 1/6/11 layout across your access points is recognised.
+- `security` confirms WPA2 is fine instead of saying nothing; healthy diagnostics include the Wi-Fi link.
+- Dashboard fills the channel map automatically in live mode.
+
 ### Changed
 - `psutil` is now a dependency.
 - `status` exits 0 when online through any connection, even without Wi-Fi.

@@ -287,3 +287,33 @@ PING_LINUX = """PING 192.168.1.1 (192.168.1.1) 56(84) bytes of data.
 4 packets transmitted, 3 received, 25% packet loss, time 1503ms
 rtt min/avg/max/mdev = 1.950/2.553/3.400/0.614 ms
 """
+
+# Real output format from a Realtek USB adapter on Windows 11 (identifiers anonymised).
+NETSH_IFACE_REALTEK = """
+There is 1 interface on the system:
+
+    Name                   : Wi-Fi 2
+    Description            : Realtek RTL8192EU Wireless LAN 802.11n USB 2.0 Network Adapter
+    GUID                   : 00000000-0000-0000-0000-000000000003
+    Physical address       : 02:47:d7:00:00:93
+    Interface type         : Primary
+    State                  : connected
+    SSID                   : Home_Room
+    AP BSSID               : 02:f1:96:00:65:cd
+    Band                   : 2.4 GHz
+    Channel                : 1
+    Connected Akm-cipher   : [ akm = 00-0f-ac:02, cipher =  00-0f-ac:04 ]
+    Network type           : Infrastructure
+    Radio type             : 802.11n
+    Authentication         : WPA2-Personal
+    Cipher                 : CCMP
+    Connection mode        : Profile
+    Receive rate (Mbps)    : 144.4
+    Transmit rate (Mbps)   : 144.4
+    Signal                 : 84% 
+    Rssi                   : -44
+    Profile                : Home_Room 
+    QoS MSCS Configured         : 0
+    QoS Map Configured          : 0
+    QoS Map Allowed by Policy   : 0
+"""

@@ -210,6 +210,9 @@ def cmd_channels(args) -> int:
         rows = [[str(c["channel"]), str(c["access_points"]), str(c["own"]),
                  str(c["strongest_dbm"]) if c["strongest_dbm"] is not None else "—"] for c in b["channels"]]
         table("Seen channels", ["Channel", "APs", "Yours", "Strongest dBm"], rows)
+        if b.get("possibly_yours"):
+            out("[dim]Probably yours (same router brand): "
+                + safe(", ".join(f"{p['ssid'] or '<hidden>'} ch {p['channel']}" for p in b["possibly_yours"])) + "[/dim]")
         rec = b.get("recommendation")
         if rec:
             out(f"[green]→ {safe(rec['reason'])}[/green] [dim](confidence: {rec['confidence']})[/dim]")
