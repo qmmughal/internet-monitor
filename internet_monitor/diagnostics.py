@@ -320,6 +320,14 @@ def classify(ev: dict, cfg: DiagnosticsConfig) -> List[Finding]:
             evidence.append(f"{len(https_ok)}/{len(https)} HTTPS endpoints responded.")
         if medians:
             evidence.append(f"Best internet handshake latency {min(medians)} ms.")
+        if wifi:
+            sig = wifi.get("signal_dbm") or {}
+            parts = [f"Wi-Fi: {wifi.get('ssid') or 'connected'}"]
+            if sig.get("value") is not None:
+                parts.append(f"{sig['value']} dBm ({sig.get('mode')})")
+            if wifi.get("band"):
+                parts.append(f"{wifi['band']} channel {wifi.get('channel')}")
+            evidence.append(", ".join(parts) + ".")
         f.insert(0, Finding(OK, "No connectivity problems detected", evidence, confidence="high"))
     return f
 

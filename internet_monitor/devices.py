@@ -356,6 +356,10 @@ def security_posture(wifi_iface, devices: Optional[List[dict]], gateway_mac_hist
                              "advice": "Use WPA2-AES (CCMP) or WPA3."})
         elif "wpa3" in sec:
             findings.append({"severity": "ok", "title": "WPA3 in use", "evidence": wifi_iface.security, "advice": None})
+        elif "wpa2" in sec:
+            findings.append({"severity": "ok", "title": "WPA2 in use", "evidence": f"Authentication reported as "
+                             f"'{wifi_iface.security}'.", "advice": "WPA2 with AES (CCMP) is fine for home use. WPA3 is "
+                             "stronger if your router and devices support it."})
     if devices:
         gw = [d for d in devices if d.get("is_gateway")]
         if gw and gateway_mac_history is not None:

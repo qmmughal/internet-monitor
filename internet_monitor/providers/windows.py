@@ -212,6 +212,59 @@ def explain_adapters(adapters: List[dict]) -> Optional[Tuple[str, str]]:
     return None
 
 
+def request_scan() -> bool:
+    """Ask Windows to rescan via the Native Wifi API (``WlanScan``, no admin needed).
+
+    Some adapters (e.g. USB dongles) do not scan in the background while
+    connected, leaving ``netsh`` with a stale list. Returns True if a scan was
+    requested on at least one interface.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except ImportError:  # pragma: no cover
+        return False
+
+    class GUID(ctypes.Structure):
+        _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD), ("Data3", wintypes.WORD),
+                    ("Data4", ctypes.c_ubyte * 8)]
+
+    class InterfaceInfo(ctypes.Structure):
+        _fields_ = [("InterfaceGuid", GUID), ("strInterfaceDescription", ctypes.c_wchar * 256),
+                    ("isState", wintypes.DWORD)]
+
+    class InterfaceInfoList(ctypes.Structure):
+        _fields_ = [("dwNumberOfItems", wintypes.DWORD), ("dwIndex", wintypes.DWORD),
+                    ("InterfaceInfo", InterfaceInfo * 1)]
+
+    try:
+        wlan = ctypes.windll.wlanapi
+    except (AttributeError, OSError):
+        return False
+    handle, version = wintypes.HANDLE(), wintypes.DWORD()
+    if wlan.WlanOpenHandle(2, None, ctypes.byref(version), ctypes.byref(handle)) != 0:
+        return False
+    requested = False
+    plist = ctypes.POINTER(InterfaceInfoList)()
+    try:
+        if wlan.WlanEnumInterfaces(handle, None, ctypes.byref(plist)) != 0:
+            return False
+        n = plist.contents.dwNumberOfItems
+        if n:
+            items = ctypes.cast(ctypes.byref(plist.contents.InterfaceInfo),
+                                ctypes.POINTER(InterfaceInfo * n)).contents
+            for info in items:
+                if wlan.WlanScan(handle, ctypes.byref(info.InterfaceGuid), None, None, None) == 0:
+                    requested = True
+        wlan.WlanFreeMemory(plist)
+    finally:
+        wlan.WlanCloseHandle(handle, None)
+    return requested
+
+
+SCAN_WAIT_S = 2.5  # measured: a USB adapter's list went from 1 to 9 access points within 2 s
+
+
 def radio_off(text: str) -> bool:
     return bool(re.search(r"\b(Software|Hardware) Off\b", text))
 
@@ -220,9 +273,12 @@ class WindowsProvider(WifiProvider):
     name = "windows-netsh"
     platform = "Windows"
 
-    def __init__(self, runner=run) -> None:
+    def __init__(self, runner=run, scanner=None, sleep=time.sleep) -> None:
         super().__init__(runner)
         self._health_cache: Optional[Tuple[float, List[dict]]] = None
+        # Only touch the real WLAN API when running real commands (tests inject a fake runner).
+        self._scan = scanner if scanner is not None else (request_scan if runner is run else (lambda: False))
+        self._sleep = sleep
 
     def _netsh(self, *args: str) -> Tuple[Optional[str], Optional[ProviderResult]]:
         cmd = self._run(["netsh", "wlan", *args], timeout=8)
@@ -266,6 +322,9 @@ class WindowsProvider(WifiProvider):
         return ProviderResult(mode=LIVE, source=SOURCE, data=parsed, hint=hint)
 
     def access_points(self) -> ProviderResult:
+        fresh = self._scan()
+        if fresh:
+            self._sleep(SCAN_WAIT_S)
         text, err = self._netsh("show", "networks", "mode=bssid")
         if err:
             return self._explain_missing(err)
@@ -280,7 +339,8 @@ class WindowsProvider(WifiProvider):
             mode=LIVE,
             source=SOURCE,
             data=parsed,
-            hint="Results come from Windows' cached scan list and may be up to a minute old.",
+            hint=("Fresh scan requested from Windows." if fresh else
+                  "Results come from Windows' cached scan list and may be up to a minute old."),
         )
 
     def capabilities(self) -> Dict[str, dict]:
@@ -293,6 +353,6 @@ class WindowsProvider(WifiProvider):
             "band": {"supported": True},
             "link_rate": {"supported": True},
             "noise": {"supported": False},
-            "access_point_scan": {"supported": True, "notes": "cached OS scan list"},
+            "access_point_scan": {"supported": True, "notes": "fresh scan requested via WlanScan, then read with netsh"},
             "permissions": {"notes": "Windows 11 24H2+: Location access required"},
         }

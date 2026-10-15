@@ -35,7 +35,7 @@ NetworkManager use. Vendors deviate from it, so estimated values carry `confiden
 | | Windows | Linux | macOS |
 |---|---|---|---|
 | Source | `netsh wlan show networks mode=bssid` | `nmcli device wifi list --rescan auto` | `system_profiler SPAirPortDataType` |
-| Fresh scan? | No — Windows' cached list (≤ ~1 min old) | May trigger a rescan (up to ~15 s) | Cached; 2–10 s to run |
+| Fresh scan? | Yes — requested via the Native Wifi API (`WlanScan`, no admin), then read after ~2.5 s | May trigger a rescan (up to ~15 s) | Cached; 2–10 s to run |
 | BSSID | ✅ | ✅ | ❌ |
 | Signal | `estimated` from % | `estimated` from % | `live` |
 | Hidden networks | shown as `<hidden>` | shown as `<hidden>` | shown as `<hidden>` |

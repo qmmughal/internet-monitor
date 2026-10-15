@@ -217,3 +217,82 @@ def test_legacy_config_folder_is_reused(monkeypatch, tmp_path):
     assert config.home() == tmp_path / ".config" / "wifi-monitor"
     (tmp_path / ".config" / "internet-monitor").mkdir()
     assert config.home() == tmp_path / ".config" / "internet-monitor"
+
+
+# ── findings from testing on real Wi-Fi hardware ─────────────────
+
+def test_realtek_netsh_output():
+    from internet_monitor.standards import describe
+    [i] = windows.parse_interfaces(fx.NETSH_IFACE_REALTEK)
+    assert i.connected and i.ssid == "Home_Room" and i.bssid == "02:f1:96:00:65:cd"
+    assert i.signal_dbm.value == -44 and i.signal_dbm.mode == "live"
+    assert i.channel == 1 and i.frequency_mhz == 2412 and i.rx_rate_mbps == 144.4
+    assert describe(i)["generation"] == "Wi-Fi 4"
+
+
+def _ap(ssid, bssid, ch, dbm):
+    from internet_monitor.models import AccessPoint
+    return AccessPoint(ssid=ssid, bssid=bssid, channel=ch, band="2.4 GHz", signal_dbm=dbm, signal_mode="estimated")
+
+
+def test_channels_respect_probably_own_access_points():
+    from internet_monitor import channels
+    aps = [_ap("Room", "70:f1:96:d1:65:cd", 1, -50), _ap("Neighbour", "4e:49:68:8e:74:26", 1, -50),
+           _ap("Hall", "70:f1:96:d2:ab:dd", 11, -62), _ap("1st_Floor", "70:f1:96:d2:21:15", 6, -66),
+           _ap("Other", "44:2a:8f:80:aa:52", 6, -71)]
+    b = channels.analyze(aps, "live", own_ssid="Room")["bands"]["2.4 GHz"]
+    assert {p["ssid"] for p in b["possibly_yours"]} == {"Hall", "1st_Floor"}
+    rec = b["recommendation"]
+    assert rec["change_recommended"] is False and rec["channel"] == 1 and "Keep it" in rec["reason"]
+
+
+def test_channels_never_suggest_a_probably_own_channel():
+    from internet_monitor import channels
+    aps = [_ap("Room", "70:f1:96:d1:65:cd", 1, -50)] + [_ap(f"N{i}", f"44:2a:8f:00:00:0{i}", 1, -45) for i in range(4)] \
+        + [_ap("Hall", "70:f1:96:d2:ab:dd", 11, -62)]
+    rec = channels.analyze(aps, "live", own_ssid="Room")["bands"]["2.4 GHz"]["recommendation"]
+    assert rec["channel"] == 6 and "Hall (ch 11)" in rec["reason"]
+
+
+def test_randomized_bssids_are_not_treated_as_own():
+    from internet_monitor import channels
+    own = [_ap("Room", "4e:49:68:de:74:26", 1, -50)]
+    assert channels.possibly_own([_ap("X", "4e:49:68:8e:74:26", 6, -50)], own) == []
+
+
+def test_wpa2_is_confirmed_ok():
+    from internet_monitor import devices
+    from internet_monitor.models import WifiInterface
+    [f] = devices.security_posture(WifiInterface(name="w", connected=True, security="WPA2-Personal"), None)
+    assert f["severity"] == "ok" and f["title"] == "WPA2 in use"
+
+
+def test_healthy_report_includes_wifi_link():
+    from internet_monitor.models import Measurement, WifiInterface
+    iface = WifiInterface(name="w", connected=True, ssid="Home", band="2.4 GHz", channel=1,
+                          signal_dbm=Measurement(-45, "dBm", "t", "live"))
+    p = Probes(route=lambda: ProviderResult(mode="live", source="t", data={"gateway": "192.168.1.1"}),
+               ping=lambda h, count=4, timeout_s=1: LatencySample(h, "icmp", 4, 4, [2.0] * 4),
+               tcp_latency=lambda h, port, count=5, timeout_s=2: LatencySample(h, "tcp", 5, 5, [20.0] * 5),
+               resolve=lambda h, timeout_s=3: {"host": h, "ok": True, "ms": 5.0},
+               https=lambda u, expect_status=None, timeout_s=5: {"url": u, "ok": True, "status": 204},
+               wifi=lambda: ProviderResult(mode="live", source="t", data=[iface]))
+    r = run_diagnostics(DiagnosticsConfig(dns_hosts=("a",), https_endpoints=(("https://a/", None),),
+                                          tcp_targets=(("1.1.1.1", 443),)), p)
+    assert "Wi-Fi: Home, -45 dBm (live), 2.4 GHz channel 1." in r.findings[0].evidence
+
+
+def test_windows_requests_fresh_scan_before_reading():
+    order = []
+
+    def runner(args, timeout=5):
+        order.append("netsh")
+        return CommandResult(args, 0, stdout=fx.NETSH_NETWORKS if "networks" in args else fx.NETSH_IFACE_REALTEK)
+
+    p = windows.WindowsProvider(runner=runner, scanner=lambda: order.append("scan") or True,
+                                sleep=lambda s: order.append(f"wait {s}"))
+    res = p.access_points()
+    assert order[:3] == ["scan", f"wait {windows.SCAN_WAIT_S}", "netsh"]
+    assert res.ok and res.hint.startswith("Fresh scan")
+    stale = windows.WindowsProvider(runner=runner, scanner=lambda: False, sleep=lambda s: None).access_points()
+    assert "cached" in stale.hint
