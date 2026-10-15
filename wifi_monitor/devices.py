@@ -289,12 +289,13 @@ class KnownDevices:
 
 
 def discover(probe: bool = False, persist: bool = True, runner=run, oui: Optional[OuiDatabase] = None,
-             route=None, sweep_fn=active_sweep, known: Optional[KnownDevices] = None) -> dict:
+             route=None, sweep_fn=active_sweep, known: Optional[KnownDevices] = None,
+             system: Optional[str] = None) -> dict:
     """Read the neighbour table (optionally after an active sweep) and annotate devices."""
     r = (route or netinfo.default_route)()
     rd = r.data or {}
     sweep = sweep_fn(rd.get("local_ip")) if probe else None
-    table = neighbor_table(runner=runner)
+    table = neighbor_table(system=system, runner=runner)
     if not table.ok:
         return {"result": table.to_dict(), "sweep": sweep}
     oui = oui or OuiDatabase()

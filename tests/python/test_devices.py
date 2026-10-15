@@ -122,7 +122,7 @@ def test_discover_passive_does_not_sweep():
         probe=False, runner=lambda a, timeout=10: CommandResult(a, 0, stdout=ARP_WIN),
         oui=devices.OuiDatabase(paths=[]), sweep_fn=lambda ip: swept.append(ip),
         route=lambda: ProviderResult(mode="live", source="t", data={"gateway": "192.168.1.1", "local_ip": "192.168.1.10"}),
-        known=devices.KnownDevices(),
+        known=devices.KnownDevices(), system="Windows",
     )
     assert not swept
     data = res["result"]["data"]
