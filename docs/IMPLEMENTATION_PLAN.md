@@ -184,5 +184,20 @@ Not verified: real Claude/OpenAI-compatible responses, a real MQTT broker / Home
 over TLS, Wi-Fi-specific features on real Wi-Fi hardware, click-driven dashboard flows
 (devices/speed test/survey/explain were verified through their API endpoints).
 
-**Recommended next task:** run on a Wi-Fi laptop (Windows with Location enabled, and Linux) to
-confirm parsers, roaming events and channel recommendations on real data.
+### Session 3 (2026-10-15)
+Any connection type, per-app usage, Windows Wi-Fi adapter health (PR #2). Renamed to Internet
+Monitor (PR #3); repository renamed to `qmmughal/internet-monitor`. PRs #1–#3 merged after CI.
+
+### Session 4 (2026-10-16) — real Wi-Fi hardware
+Verified on Windows 11 with a Realtek RTL8192EU USB adapter (2.4 GHz, WPA2): `status` (live RSSI
+from `netsh`), `scan`, `channels`, `monitor`, `survey`, `security`, `diagnose`, `speedtest`,
+`serve` history/metrics and the dashboard. Fixes merged in PR #4: fresh scan via `WlanScan`
+(the adapter's cached list held only the connected network), channel advice that respects access
+points that are probably the user's own, WPA2 confirmation, Wi-Fi line in healthy diagnostics,
+automatic channel map. 322 Python + 55 JS tests passing.
+
+Still not verified: Linux and macOS on real hardware, 5/6 GHz and Wi-Fi 6/7 links, roaming between
+access points, real AI provider responses, a real MQTT broker, the hub over TLS.
+
+**Recommended next task:** run on Linux (NetworkManager) and macOS hardware; test roaming by walking
+between access points with `serve` running.

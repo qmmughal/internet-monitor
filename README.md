@@ -57,11 +57,30 @@ Requires **Python 3.9+**. `pip install` also installs [psutil](https://github.co
 counters and per-app connections); [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
 No administrator rights are needed.
 
+**Windows (PowerShell)**
+
+```powershell
+git clone https://github.com/qmmughal/internet-monitor.git
+cd internet-monitor
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1          # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+pip install ".[rich]"
+internet-monitor serve               # then open http://127.0.0.1:8765
+```
+
+**Linux / macOS**
+
 ```bash
 git clone https://github.com/qmmughal/internet-monitor.git
 cd internet-monitor
-pip install ".[rich]"          # or just run python cli/internet-monitor.py without installing
+python3 -m venv .venv && source .venv/bin/activate
+pip install ".[rich]"
+internet-monitor serve               # then open http://127.0.0.1:8765
 ```
+
+Next time, just `cd` into the folder, activate the environment and run `internet-monitor serve`.
+**Everyday tasks — "why is it slow?", "which app is using my internet?", "where is my Wi-Fi weak?" —
+are in the [usage guide](docs/USAGE.md).** Full install options: [INSTALLATION.md](docs/INSTALLATION.md).
 
 ### Troubleshoot your connection
 
@@ -131,6 +150,10 @@ The v1.0 flags (`--scan`, `--signal`, `--export csv|json`) still work.
 | Notes | 24H2+ needs **Location** access; English `netsh` output only | — | not yet verified on hardware |
 
 Full details: [docs/CAPABILITIES.md](docs/CAPABILITIES.md). Problems: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+**Tested on real hardware:** Windows 11 over Ethernet and over Wi-Fi (Realtek USB adapter, 2.4 GHz),
+including a failed internal adapter (reported as Device Manager code 43). Linux and macOS are covered
+by CI with captured command output but have not yet been run on real hardware.
 
 ## 🔒 Privacy and security
 

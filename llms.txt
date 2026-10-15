@@ -28,6 +28,12 @@
 - Hub + agents with token auth, Prometheus /metrics, MQTT with Home Assistant discovery
 - CLI: status, scan, diagnose, speedtest, channels, devices, security, survey, ask, monitor, history, alerts, serve, hub, agent
 
+## Install and run
+
+- `git clone https://github.com/qmmughal/internet-monitor.git && cd internet-monitor`
+- `python -m venv .venv`, activate it, `pip install ".[rich]"`
+- `internet-monitor serve` → dashboard at http://127.0.0.1:8765; everyday tasks in docs/USAGE.md
+
 ## Out of scope in this release
 
 - Persistent database (history is in memory by design) and an MCP server.

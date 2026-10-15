@@ -1,5 +1,9 @@
 # Capability Matrix
 
+**Verification status:** Windows 11 verified on real hardware (Ethernet; Wi-Fi via a Realtek
+RTL8192EU USB adapter on 2.4 GHz; a failed Intel AX211 adapter). Linux and macOS are verified only
+with captured command output in CI, not yet on real hardware.
+
 What Internet Monitor can measure on each platform, where the data comes from, and
 how it is labelled. Run `internet-monitor capabilities` to see what your system reports.
 

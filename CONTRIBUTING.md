@@ -220,7 +220,7 @@ perf(logger): debounce localStorage writes
 
 ### Before opening an issue:
 - Search existing [issues](https://github.com/qmmughal/internet-monitor/issues)
-- Check the [FAQ](docs/FAQ.md)
+- Check the [usage guide](docs/USAGE.md) and [troubleshooting](docs/TROUBLESHOOTING.md)
 - Try the latest `main` branch
 
 ### Security issues:
