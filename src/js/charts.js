@@ -1,5 +1,5 @@
 /**
- * charts.js — Chart.js chart management for WiFi Monitor
+ * charts.js — Chart.js chart management for Internet Monitor
  */
 
 'use strict';

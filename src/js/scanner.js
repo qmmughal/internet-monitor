@@ -1,7 +1,7 @@
 /**
- * scanner.js — Wi-Fi state and access point scanning for WiFi Monitor
+ * scanner.js — Wi-Fi state and access point scanning for Internet Monitor
  *
- * With the local API (`wifi-monitor serve`) data comes from the operating
+ * With the local API (`internet-monitor serve`) data comes from the operating
  * system. Without it, this module generates clearly labelled demo data.
  */
 
@@ -136,7 +136,7 @@ const NetworkScanner = (() => {
       return {
         ts: Date.now(), mode: 'unavailable', simulated: false, network: null, signal: null,
         signalMode: 'unavailable', source: 'api', error: `Local API unreachable: ${err.message}`,
-        hint: 'Is `wifi-monitor serve` still running?', ip: null, gateway: null,
+        hint: 'Is `internet-monitor serve` still running?', ip: null, gateway: null,
       };
     }
   }

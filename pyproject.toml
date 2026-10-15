@@ -3,13 +3,13 @@ requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "wifi-monitor"
+name = "internet-monitor"
 version = "1.3.0.dev0"
-description = "Local-first Wi-Fi monitoring, diagnostics and network intelligence (CLI, dashboard, local API, optional AI and integrations)"
+description = "Local-first internet monitoring: any connection type, per-app usage, Wi-Fi details, diagnostics (CLI, dashboard, local API, optional AI and integrations)"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
-authors = [{ name = "WiFi Monitor Contributors" }]
+authors = [{ name = "Internet Monitor Contributors" }]
 keywords = ["wifi", "network", "diagnostics", "monitoring", "netsh", "nmcli"]
 classifiers = [
   "License :: OSI Approved :: MIT License",
@@ -31,14 +31,15 @@ all = ["rich>=13", "anthropic>=1.0; python_version >= '3.10'", "paho-mqtt>=1.6"]
 dev = ["rich>=13", "pytest>=7"]
 
 [project.scripts]
-wifi-monitor = "wifi_monitor.cli:main"
+internet-monitor = "internet_monitor.cli:main"
+wifi-monitor = "internet_monitor.cli:main"   # former name, kept as an alias
 
 [project.urls]
-Homepage = "https://github.com/qmmughal/wifi-monitor"
-Issues = "https://github.com/qmmughal/wifi-monitor/issues"
+Homepage = "https://github.com/qmmughal/internet-monitor"
+Issues = "https://github.com/qmmughal/internet-monitor/issues"
 
 [tool.setuptools]
-packages = ["wifi_monitor", "wifi_monitor.providers"]
+packages = ["internet_monitor", "internet_monitor.providers"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests/python"]

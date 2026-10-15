@@ -1,12 +1,12 @@
 import json
 
-from wifi_monitor import cli, commands, hub
+from internet_monitor import cli, commands, hub
 
 
 def test_history_without_server_explains(capsys):
     code = cli.main(["history", "--url", "http://127.0.0.1:9"])
     assert code == cli.EXIT_UNAVAILABLE
-    assert "wifi-monitor serve" in capsys.readouterr().out
+    assert "internet-monitor serve" in capsys.readouterr().out
 
 
 def test_alerts_without_server(capsys):
@@ -20,7 +20,7 @@ def test_channels_demo_json(capsys):
 
 
 def test_survey_cli_flow(capsys, monkeypatch):
-    monkeypatch.setattr("wifi_monitor.survey.time.sleep", lambda s: None)
+    monkeypatch.setattr("internet_monitor.survey.time.sleep", lambda s: None)
     assert cli.main(["survey", "add", "Kitchen", "--demo", "--samples", "2"]) == 0
     assert cli.main(["survey", "report", "--json"]) == 0
     out = capsys.readouterr().out
@@ -67,11 +67,11 @@ def test_hub_token_lifecycle(capsys):
 
 
 def test_agent_requires_token(monkeypatch, capsys):
-    monkeypatch.delenv("WIFI_MONITOR_AGENT_TOKEN", raising=False)
+    monkeypatch.delenv("INTERNET_MONITOR_AGENT_TOKEN", raising=False)
     assert cli.main(["agent", "--hub", "https://hub.example"]) == cli.EXIT_USAGE
 
 
 def test_agent_refuses_remote_http(monkeypatch, capsys):
-    monkeypatch.setenv("WIFI_MONITOR_AGENT_TOKEN", "t")
+    monkeypatch.setenv("INTERNET_MONITOR_AGENT_TOKEN", "t")
     assert cli.main(["agent", "--hub", "http://192.168.1.5:8766", "--once"]) == cli.EXIT_USAGE
     assert "plain HTTP" in capsys.readouterr().out

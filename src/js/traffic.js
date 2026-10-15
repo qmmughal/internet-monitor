@@ -1,7 +1,7 @@
 /**
  * traffic.js — Network activity for any connection type, and per-app usage
  *
- * Data comes only from the local API (`wifi-monitor serve`):
+ * Data comes only from the local API (`internet-monitor serve`):
  *   status.traffic          live rates per interface (OS byte counters)
  *   /api/v1/apps            bytes per app over a period
  *   /api/v1/apps/live       per-app rates right now

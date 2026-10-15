@@ -14,7 +14,7 @@ AI third, integrations and scale afterwards.**
 
 - `src/` — zero-build browser dashboard (IIFE modules, Chart.js from CDN).
   Has no connection to native data. Everything is generated in the browser.
-- `cli/wifi-monitor.py` — single-file Rich CLI. Calls `netsh` / `nmcli` /
+- `cli/internet-monitor.py` — single-file Rich CLI. Calls `netsh` / `nmcli` /
   `airport` for signal and SSID, and silently falls back to random data.
 - `tests/unit.test.js` — tests *copies* of helper functions pasted into the
   test file, not the shipped `src/js/utils.js`.
@@ -36,7 +36,7 @@ AI third, integrations and scale afterwards.**
 | Signal history + CSV/JSON export | `logger.js` | Works, but records simulated values with no provenance |
 | Alert rules | `logger.js#checkAlerts` | Weak-signal and latency work on (simulated) inputs; "congestion" rule has no implementation |
 | Theme toggle | `app.js` | Works |
-| CLI live monitor | `cli/wifi-monitor.py` | Real on Windows/Linux when Wi-Fi is present (percentage → dBm **estimate** shown as a measurement); otherwise **silent simulation** |
+| CLI live monitor | `cli/internet-monitor.py` | Real on Windows/Linux when Wi-Fi is present (percentage → dBm **estimate** shown as a measurement); otherwise **silent simulation** |
 | CLI SSID | `get_native_ssid` | Falls back to fabricated `"WiFi_Network"` |
 | CLI `--scan` | `run_scan` | **Simulated**: `FAKE_NETWORKS` with random dBm |
 | CLI `--export` | `export_data` | **Broken**: runs in a fresh process with empty log, always prints "no data" |
@@ -83,7 +83,7 @@ Engineering (P1)
 Legend: ✅ done · 🔄 in progress · ⬜ not started
 
 ### P0 — correctness, security, data integrity
-- ✅ Python package `wifi_monitor/` with a provenance-aware data model
+- ✅ Python package `internet_monitor/` with a provenance-aware data model
   (`live` / `estimated` / `simulated` / `unavailable`).
 - ✅ Safe subprocess runner: argument lists only, no shell, timeouts,
   bounded output, structured errors.
@@ -99,7 +99,7 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started
 - ✅ Network basics: default gateway + local IP per platform.
 - ✅ Diagnostics engine: link → gateway → DNS → HTTPS → latency/jitter, rule-based findings with evidence and confidence.
 - ✅ CLI subcommands `status`, `scan`, `diagnose`, `capabilities`, `monitor`, `--json`, exit codes; legacy flags kept.
-- ✅ Local loopback API (`wifi-monitor serve`, stdlib only) serving the dashboard and `/api/v1/*`; dashboard switches to live mode when the API is present.
+- ✅ Local loopback API (`internet-monitor serve`, stdlib only) serving the dashboard and `/api/v1/*`; dashboard switches to live mode when the API is present.
 - ✅ pytest suite with fixtures for all parsers; JS tests load the real `utils.js`.
 - 🔄 CI rewritten (no `npm ci` without lockfile; Python tests on Linux/Windows/macOS). **Not yet run on GitHub** — verify on first push.
 - ✅ Docs: README, capability matrix, INSTALLATION, TROUBLESHOOTING, PRIVACY.

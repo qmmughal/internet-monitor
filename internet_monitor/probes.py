@@ -159,7 +159,7 @@ def https_check(url: str, expect_status: Optional[int] = None, timeout_s: float 
     if not url.startswith("https://"):
         return {"url": url, "ok": False, "error": "only https:// endpoints are allowed"}
     opener = urllib.request.build_opener(_NoRedirect, urllib.request.HTTPSHandler(context=ssl.create_default_context()))
-    req = urllib.request.Request(url, headers={"User-Agent": "wifi-monitor-diagnostics"})
+    req = urllib.request.Request(url, headers={"User-Agent": "internet-monitor-diagnostics"})
     start = time.perf_counter()
     status, error = None, None
     try:

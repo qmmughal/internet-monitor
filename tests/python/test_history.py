@@ -1,8 +1,8 @@
 import csv
 import io
 
-from wifi_monitor.history import AlertManager, History, Sample, detect_anomalies, percentile, summarize
-from wifi_monitor.config import DEFAULTS
+from internet_monitor.history import AlertManager, History, Sample, detect_anomalies, percentile, summarize
+from internet_monitor.config import DEFAULTS
 
 TH = DEFAULTS["thresholds"]
 

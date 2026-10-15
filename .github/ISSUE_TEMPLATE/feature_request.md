@@ -1,6 +1,6 @@
 ---
 name: 💡 Feature Request
-about: Suggest a new feature or improvement for WiFi Monitor
+about: Suggest a new feature or improvement for Internet Monitor
 title: "[FEAT] "
 labels: ["enhancement", "needs-triage"]
 assignees: []

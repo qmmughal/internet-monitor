@@ -1,6 +1,6 @@
 import pytest
 
-from wifi_monitor import signal as s
+from internet_monitor import signal as s
 
 
 @pytest.mark.parametrize("dbm,pct", [(-30, 100), (-50, 100), (-75, 50), (-60, 80), (-100, 0), (-110, 0)])

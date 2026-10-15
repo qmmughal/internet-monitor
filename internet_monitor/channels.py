@@ -98,7 +98,7 @@ def analyze(aps: List[AccessPoint], mode: str, own_ssid: Optional[str] = None) -
             "Allowed channels depend on your country and router; DFS channels may be unavailable or "
             "vacated when radar is detected.",
             "The scan is a snapshot; neighbours change channels and some may be hidden.",
-            "This is a suggestion only. WiFi Monitor never changes router settings.",
+            "This is a suggestion only. Internet Monitor never changes router settings.",
         ],
     }
 

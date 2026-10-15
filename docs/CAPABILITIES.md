@@ -1,7 +1,7 @@
 # Capability Matrix
 
-What WiFi Monitor can measure on each platform, where the data comes from, and
-how it is labelled. Run `wifi-monitor capabilities` to see what your system reports.
+What Internet Monitor can measure on each platform, where the data comes from, and
+how it is labelled. Run `internet-monitor capabilities` to see what your system reports.
 
 ## Provenance labels
 
@@ -60,7 +60,7 @@ utilization or interference.
 
 | Platform | Requirement |
 |---|---|
-| Windows 11 24H2+ | Settings → Privacy & security → Location → on, and *Let desktop apps access your location*. Without it `netsh wlan` refuses and WiFi Monitor reports the hint. |
+| Windows 11 24H2+ | Settings → Privacy & security → Location → on, and *Let desktop apps access your location*. Without it `netsh wlan` refuses and Internet Monitor reports the hint. |
 | Windows (any) | `netsh` output must be English to be parsed. Other locales are reported as unavailable rather than guessed. |
 | Linux | NetworkManager running. `iw` (package `iw`) for live dBm. No root required. |
 | macOS 14+ | Location permission for the terminal app to see SSIDs. |
@@ -84,7 +84,7 @@ Connections show *who* an app talks to, not how much; UDP traffic on Linux is no
 
 ## Wi-Fi adapter health (Windows)
 
-When `netsh` reports no wireless interface, WiFi Monitor checks whether a Wi-Fi adapter exists but
+When `netsh` reports no wireless interface, Internet Monitor checks whether a Wi-Fi adapter exists but
 is broken (Device Manager problem code, e.g. code 43), disabled, or switched off (airplane mode /
 radio off), and says which. It never changes device settings.
 

@@ -1,11 +1,11 @@
 import pytest
 
-from wifi_monitor import speedtest, survey
-from wifi_monitor.collector import Collector
-from wifi_monitor.history import History
-from wifi_monitor.models import Measurement, ProviderResult, WifiInterface
-from wifi_monitor.probes import LatencySample
-from wifi_monitor.providers import DemoProvider
+from internet_monitor import speedtest, survey
+from internet_monitor.collector import Collector
+from internet_monitor.history import History
+from internet_monitor.models import Measurement, ProviderResult, WifiInterface
+from internet_monitor.probes import LatencySample
+from internet_monitor.providers import DemoProvider
 
 
 class OneIface:

@@ -1,13 +1,13 @@
 # Configuration
 
-WiFi Monitor works without any configuration. Optional settings live in `config.json` in the
+Internet Monitor works without any configuration. Optional settings live in `config.json` in the
 config directory:
 
 | Platform | Directory |
 |---|---|
-| Windows | `%APPDATA%\wifi-monitor` |
-| Linux / macOS | `~/.config/wifi-monitor` |
-| Any | `$WIFI_MONITOR_HOME` overrides the above |
+| Windows | `%APPDATA%\internet-monitor` |
+| Linux / macOS | `~/.config/internet-monitor` |
+| Any | `$INTERNET_MONITOR_HOME` overrides the above |
 
 Unknown keys and values of the wrong type are ignored. Defaults:
 
@@ -39,8 +39,8 @@ Unknown keys and values of the wrong type are ignored. Defaults:
     "host": null,
     "port": 1883,
     "username": null,
-    "password_env": "WIFI_MONITOR_MQTT_PASSWORD",
-    "topic_prefix": "wifi_monitor",
+    "password_env": "INTERNET_MONITOR_MQTT_PASSWORD",
+    "topic_prefix": "internet_monitor",
     "home_assistant_discovery": true,
     "tls": false
   }

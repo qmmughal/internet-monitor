@@ -1,5 +1,5 @@
 /**
- * devices.js — Device discovery for WiFi Monitor
+ * devices.js — Device discovery for Internet Monitor
  *
  * Real device discovery is not implemented yet (see docs/IMPLEMENTATION_PLAN.md).
  * In demo modes this module generates SIMULATED devices, labelled as such.
@@ -65,7 +65,7 @@ const DeviceDiscovery = (() => {
     },
   ];
 
-  const UNAVAILABLE_MSG = 'Live device discovery is not implemented yet. WiFi Monitor will not show invented devices.';
+  const UNAVAILABLE_MSG = 'Live device discovery is not implemented yet. Internet Monitor will not show invented devices.';
 
   function isAvailable() {
     return DataSource.isSimulated();
@@ -148,7 +148,7 @@ const DeviceDiscovery = (() => {
 
     if (!isAvailable()) {
       grid.innerHTML = `<div class="empty-state">${escapeHTML(UNAVAILABLE_MSG)}<br>`
-        + 'Restart with <code>wifi-monitor serve --demo</code> to preview the interface with simulated devices.</div>';
+        + 'Restart with <code>internet-monitor serve --demo</code> to preview the interface with simulated devices.</div>';
       return;
     }
     if (!filtered.length) {

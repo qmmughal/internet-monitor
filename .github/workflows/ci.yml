@@ -30,13 +30,13 @@ jobs:
         run: python -m pytest -q
       - name: CLI smoke test (legacy entry point)
         run: |
-          python cli/wifi-monitor.py --help
-          python -m wifi_monitor capabilities --json
-          python -m wifi_monitor scan --demo --json
+          python cli/internet-monitor.py --help
+          python -m internet_monitor capabilities --json
+          python -m internet_monitor scan --demo --json
       - name: CLI works without rich
         run: |
           python -m pip uninstall -y rich
-          python -m wifi_monitor status --demo
+          python -m internet_monitor status --demo
       - name: Optional integrations import
         if: matrix.python == '3.12'
         run: |

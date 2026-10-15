@@ -205,7 +205,7 @@ def explain_adapters(adapters: List[dict]) -> Optional[Tuple[str, str]]:
             reason = PNP_PROBLEMS.get(problem, f"Windows reports a device problem ({problem})")
             return (f"Wi-Fi adapter '{desc}' is not working: {reason}",
                     "Open Device Manager › Network adapters, check the device, and try updating or reinstalling its "
-                    "driver, or restart the computer. WiFi Monitor does not change device settings.")
+                    "driver, or restart the computer. Internet Monitor does not change device settings.")
         if (a.get("admin") or "").lower() == "down" or (a.get("status") or "").lower() == "disabled":
             return (f"Wi-Fi adapter '{desc}' is disabled",
                     "Enable it in Settings › Network & internet › Advanced network settings.")

@@ -8,11 +8,11 @@ from http.server import ThreadingHTTPServer
 
 import pytest
 
-from wifi_monitor import server
-from wifi_monitor.diagnostics import Report
-from wifi_monitor.history import History, Sample
-from wifi_monitor.models import ProviderResult
-from wifi_monitor.providers import DemoProvider
+from internet_monitor import server
+from internet_monitor.diagnostics import Report
+from internet_monitor.history import History, Sample
+from internet_monitor.models import ProviderResult
+from internet_monitor.providers import DemoProvider
 
 
 def route():
@@ -134,7 +134,7 @@ def test_channels_and_standard_demo():
 
 def test_metrics_endpoint():
     status, raw = app().get("/metrics")
-    assert status == 200 and b"wifi_monitor_signal_dbm" in raw.body and raw.content_type.startswith("text/plain")
+    assert status == 200 and b"internet_monitor_signal_dbm" in raw.body and raw.content_type.startswith("text/plain")
 
 
 def test_history_clear():

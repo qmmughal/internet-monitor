@@ -1,5 +1,5 @@
 /**
- * app.js — Main application controller for WiFi Monitor
+ * app.js — Main application controller for Internet Monitor
  */
 
 'use strict';
@@ -51,12 +51,12 @@ function applyModeUI() {
     banner.hidden = false;
     banner.className = 'mode-banner mode-banner-demo';
     banner.innerHTML = '<strong>Demo mode — all values are SIMULATED.</strong> Browsers cannot read Wi-Fi hardware. '
-      + 'For real measurements run <code>wifi-monitor serve</code> and open <code>http://127.0.0.1:8765</code>.';
+      + 'For real measurements run <code>internet-monitor serve</code> and open <code>http://127.0.0.1:8765</code>.';
   } else if (mode === 'server-demo') {
     banner.hidden = false;
     banner.className = 'mode-banner mode-banner-demo';
     banner.innerHTML = '<strong>Demo mode — the server is generating SIMULATED data</strong> '
-      + '(<code>wifi-monitor serve --demo</code>). Restart without <code>--demo</code> for real measurements.';
+      + '(<code>internet-monitor serve --demo</code>). Restart without <code>--demo</code> for real measurements.';
   } else {
     banner.hidden = true;
   }
@@ -66,7 +66,7 @@ function applyModeUI() {
   if (mode !== 'live') {
     diagBtn.disabled = true;
     diagOut.innerHTML = '<div class="empty-state">The connectivity check runs real network tests through the local API. '
-      + 'Start <code>wifi-monitor serve</code> (without <code>--demo</code>) to use it.</div>';
+      + 'Start <code>internet-monitor serve</code> (without <code>--demo</code>) to use it.</div>';
   }
 
   if (mode === 'live') {
@@ -501,7 +501,7 @@ function renderReport(report) {
     <div class="diag-overall diag-overall-${escapeHTML(report.overall)}">Overall: ${escapeHTML(overall)}
       <span class="muted small">· ${escapeHTML(report.duration_ms)} ms · ${escapeHTML(formatTime(new Date(report.finished)))}</span></div>
     ${items}
-    <div class="muted small">No settings were changed. Full evidence: <code>wifi-monitor diagnose --json</code></div>`;
+    <div class="muted small">No settings were changed. Full evidence: <code>internet-monitor diagnose --json</code></div>`;
 }
 
 /* ═══════════════════════════════════════════════════════════════

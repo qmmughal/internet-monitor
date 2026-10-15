@@ -1,18 +1,18 @@
-# WiFi Monitor
-# https://github.com/qmmughal/wifi-monitor
+# Internet Monitor
+# https://github.com/qmmughal/internet-monitor
 # llms.txt — Machine-readable project descriptor for LLMs and AI agents
 
-> WiFi Monitor is an open-source, local-first Wi-Fi monitoring and connectivity
+> Internet Monitor is an open-source, local-first internet monitoring (any connection type, per-app usage, Wi-Fi) and connectivity
 > troubleshooting tool: a Python CLI, a loopback-only read-only local API, and a browser
 > dashboard. Every value is labelled live, estimated, simulated or unavailable; nothing is fabricated.
 
 ## Project
 
-- Name: WiFi Monitor
+- Name: Internet Monitor
 - Version: 1.3.0-dev
 - License: MIT
 - Author: Qaiser Mehmood (qmmughal)
-- Repository: https://github.com/qmmughal/wifi-monitor
+- Repository: https://github.com/qmmughal/internet-monitor
 - Language: Python (core, CLI, API), JavaScript (dashboard)
 
 ## Implemented
@@ -34,9 +34,9 @@
 
 ## Key files
 
-- wifi_monitor/providers/   — per-OS Wi-Fi readers
-- wifi_monitor/diagnostics.py — troubleshooter rules
-- wifi_monitor/server.py    — local API
+- internet_monitor/providers/   — per-OS Wi-Fi readers
+- internet_monitor/diagnostics.py — troubleshooter rules
+- internet_monitor/server.py    — local API
 - src/                      — dashboard
 - docs/CAPABILITIES.md      — what each platform can measure
 - docs/ARCHITECTURE.md      — design, API endpoints, anomaly rules

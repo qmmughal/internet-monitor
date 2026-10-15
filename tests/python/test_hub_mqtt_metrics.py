@@ -7,8 +7,8 @@ from http.server import ThreadingHTTPServer
 
 import pytest
 
-from wifi_monitor import hub, metrics, mqtt
-from wifi_monitor.history import History, Sample
+from internet_monitor import hub, metrics, mqtt
+from internet_monitor.history import History, Sample
 
 
 def sample(ts=None, **kw):
@@ -100,7 +100,7 @@ def test_hub_http_auth(hub_server):
     agents = json.loads(body)["agents"]
     assert status == 200 and agents[0]["agent"] == "pi"  # identity from the token, not the request
     status, body = call(port, "GET", "/metrics", viewer)
-    assert status == 200 and b'wifi_monitor_signal_dbm{agent="pi",mode="live"} -55' in body
+    assert status == 200 and b'internet_monitor_signal_dbm{agent="pi",mode="live"} -55' in body
     st.tokens.revoke("agents", "pi")
     st.agents["pi"]["last_report"] = 0
     assert call(port, "POST", "/api/v1/agents/report", agent, {"samples": [sample()]})[0] == 401
@@ -165,14 +165,14 @@ def test_metrics_render_and_composite():
     h.add(Sample(**sample(t - 10)))
     h.add(Sample(**sample(t, gateway_ms=None, internet_ms=None, dns_ms=None, gateway_loss_pct=None)))
     text = metrics.render(h)
-    assert "wifi_monitor_gateway_latency_ms 2" in text  # filled from the recent measurement
-    assert "# TYPE wifi_monitor_signal_dbm gauge" in text
+    assert "internet_monitor_gateway_latency_ms 2" in text  # filled from the recent measurement
+    assert "# TYPE internet_monitor_signal_dbm gauge" in text
     assert "Home" not in text and "02:00" not in text  # no identifiers exported
     assert metrics._escape('a"b\\c\nd') == 'a\\"b\\\\c\\nd'
 
 
 def test_metrics_empty_history():
-    assert "wifi_monitor_samples 0" in metrics.render(History())
+    assert "internet_monitor_samples 0" in metrics.render(History())
 
 
 # ── MQTT ─────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ def test_mqtt_discovery_and_state():
     assert c.connected == ("broker", 1883)
     topics = [t for t, _, _ in c.published]
     assert "wm/office_pc/availability" in topics
-    assert "homeassistant/sensor/wifi_monitor_office_pc/signal_dbm/config" in topics
+    assert "homeassistant/sensor/internet_monitor_office_pc/signal_dbm/config" in topics
     assert all(r for t, _, r in c.published if t.startswith("homeassistant/"))  # discovery is retained
     pub.publish(Sample(**sample()))
     topic, payload, _ = c.published[-1]

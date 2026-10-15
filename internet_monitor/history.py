@@ -341,7 +341,7 @@ def detect_anomalies(history: List[Sample], events: List[Event], th: dict) -> Li
         found.append(dict(
             rule="gateway_loss", severity="warning", title="Packet loss to the router",
             detail=f"{cur.gateway_loss_pct}% of pings to the router were lost in the latest check.",
-            evidence=[f"loss {cur.gateway_loss_pct}% (small sample; confirm with `wifi-monitor diagnose`)"]))
+            evidence=[f"loss {cur.gateway_loss_pct}% (small sample; confirm with `internet-monitor diagnose`)"]))
 
     # Slow DNS sustained
     last3_dns = [s.dns_ms for s in history[-6:] if s.dns_ms is not None][-3:]

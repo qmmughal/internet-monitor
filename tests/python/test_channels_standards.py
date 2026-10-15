@@ -1,6 +1,6 @@
-from wifi_monitor import channels, standards
-from wifi_monitor.models import AccessPoint, WifiInterface
-from wifi_monitor.providers import linux, macos
+from internet_monitor import channels, standards
+from internet_monitor.models import AccessPoint, WifiInterface
+from internet_monitor.providers import linux, macos
 
 import fixtures as fx
 

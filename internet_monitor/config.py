@@ -1,7 +1,7 @@
 """User configuration and small local state files (JSON, no database).
 
-Location: ``$WIFI_MONITOR_HOME`` if set, else ``%APPDATA%\\wifi-monitor`` on
-Windows and ``~/.config/wifi-monitor`` elsewhere.
+Location: ``$INTERNET_MONITOR_HOME`` if set, else ``%APPDATA%\\internet-monitor`` on
+Windows and ``~/.config/internet-monitor`` elsewhere.
 
 Secrets (AI API keys, agent tokens) are never written here in plain text:
 API keys come from environment variables, agent tokens are stored as SHA-256.
@@ -15,7 +15,7 @@ import os
 import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 DEFAULTS: Dict[str, Any] = {
     "collector": {
@@ -44,21 +44,47 @@ DEFAULTS: Dict[str, Any] = {
         "host": None,
         "port": 1883,
         "username": None,
-        "password_env": "WIFI_MONITOR_MQTT_PASSWORD",
-        "topic_prefix": "wifi_monitor",
+        "password_env": "INTERNET_MONITOR_MQTT_PASSWORD",
+        "topic_prefix": "internet_monitor",
         "home_assistant_discovery": True,
         "tls": False,
     },
 }
 
 
+LEGACY_PREFIX = "WIFI_MONITOR_"  # the project was called WiFi Monitor before 1.3
+
+
+def env(name: str, default: Optional[str] = None) -> Optional[str]:
+    """Read INTERNET_MONITOR_<name>, falling back to the legacy WIFI_MONITOR_<name>."""
+    val = os.environ.get(f"INTERNET_MONITOR_{name}")
+    if val is None:
+        val = os.environ.get(f"{LEGACY_PREFIX}{name}")
+    return default if val is None else val
+
+
+def env_var(full_name: Optional[str]) -> Optional[str]:
+    """Read an environment variable named in config/CLI; INTERNET_MONITOR_* names fall back to legacy names."""
+    if not full_name:
+        return None
+    val = os.environ.get(full_name)
+    if val is None and full_name.startswith("INTERNET_MONITOR_"):
+        val = os.environ.get(LEGACY_PREFIX + full_name[len("INTERNET_MONITOR_"):])
+    return val
+
+
 def home() -> Path:
-    env = os.environ.get("WIFI_MONITOR_HOME")
-    if env:
-        return Path(env)
+    override = env("HOME")
+    if override:
+        return Path(override)
     if sys.platform == "win32" and os.environ.get("APPDATA"):
-        return Path(os.environ["APPDATA"]) / "wifi-monitor"
-    return Path.home() / ".config" / "wifi-monitor"
+        base = Path(os.environ["APPDATA"])
+    else:
+        base = Path.home() / ".config"
+    current, legacy = base / "internet-monitor", base / "wifi-monitor"
+    if not current.exists() and legacy.exists():  # keep using settings created before the rename
+        return legacy
+    return current
 
 
 def _merge(base: dict, override: dict) -> dict:
