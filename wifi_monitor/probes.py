@@ -107,9 +107,18 @@ def tcp_connect(host: str, port: int, timeout_s: float = 2.0) -> dict:
 
 def tcp_latency(host: str, port: int = 443, count: int = 5, timeout_s: float = 2.0) -> LatencySample:
     sample = LatencySample(f"{host}:{port}", "tcp", 0, 0)
+    target = host
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:  # resolve once so DNS time is not counted in every handshake
+        r = resolve(host, timeout_s=timeout_s + 1)
+        if not r.get("ok"):
+            sample.error = f"dns: {r.get('error')}"
+            return sample
+        target = r["addresses"][0]
     for _ in range(max(1, min(count, 10))):
         sample.sent += 1
-        r = tcp_connect(host, port, timeout_s)
+        r = tcp_connect(target, port, timeout_s)
         if r.get("open"):
             sample.received += 1
             sample.rtts_ms.append(r["rtt_ms"])

@@ -67,9 +67,36 @@ utilization or interference.
 
 No feature requires administrator/root rights.
 
-## Not yet available
+## Wi-Fi generation and channel width
 
-- Real download/upload throughput measurement.
-- LAN device discovery (ARP / neighbour table).
-- Wi-Fi 6E/7 capability detection, MLO, channel width (only the band/channel is reported).
-- Non-English Windows parsing.
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Generation (Wi-Fi 4/5/6/6E/7) | ✅ from `Radio type` | ✅ from `iw` bitrate (HT/VHT/HE/EHT) | ✅ from PHY mode |
+| Channel width | ❌ | ✅ from `iw` | ✅ |
+| Multi-Link Operation (MLO) | ❌ reported as unavailable | ❌ | ❌ |
+
+These describe the current connection as negotiated, not the router's maximum capability.
+Wi-Fi 7 is never inferred from an SSID or a 6 GHz frequency.
+
+## Devices on the network
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Source | `arp -a` | `ip neigh` | `arp -an` |
+| Passive (default) | ✅ no packets sent | ✅ | ✅ |
+| Active sweep (`--probe`) | ✅ one ping per address of the private /24 | ✅ | ✅ |
+| Vendor names | only with an OUI file (e.g. IEEE `oui.txt` in the config dir) | ✅ if `ieee-data`/nmap/wireshark files are installed | ✅ with nmap/wireshark files |
+
+Randomized (private) MAC addresses are flagged; their vendor is unknowable.
+
+## Throughput
+
+`speedtest` downloads from and uploads to `speed.cloudflare.com` over one HTTPS connection,
+capped by data budget (default 50 MB) and time. It reports the largest successful transfer.
+
+## Not available
+
+- Non-English Windows `netsh` parsing (reported as unavailable, not guessed).
+- MLO and per-link Wi-Fi 7 data.
+- Measured RF interference or channel utilisation (channel scores are neighbour counts).
+- Persistent history across restarts (by design in this release).

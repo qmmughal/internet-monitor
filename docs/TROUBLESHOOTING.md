@@ -60,3 +60,38 @@ not a problem.
 
 Each probe has a timeout (default 2 s; change with `--timeout`). A full run normally takes
 5–15 s and is bounded even when everything times out.
+
+## `history` / `alerts`: "Could not reach the WiFi Monitor server"
+
+History and alerts are collected by a running `wifi-monitor serve`; start it first. They are kept
+in memory, so they start empty after each restart.
+
+## Device list is short
+
+Without `--probe` only devices this computer has recently talked to appear (the OS neighbour
+table). `wifi-monitor devices --probe` pings the local /24 first — only on networks you own or are
+authorised to scan. Phones with private MAC addresses may appear as new after reconnecting.
+
+## Vendor shows "—"
+
+No OUI database was found. Download the IEEE list (`oui.txt`) and place it in the config
+directory ([CONFIG.md](CONFIG.md)).
+
+## Speed test results look low
+
+The test uses one connection to the nearest Cloudflare edge and the whole path (Wi-Fi, router,
+ISP). Pause other downloads, and try a larger budget: `wifi-monitor speedtest --max-mb 200`.
+
+## `ask` says "AI is disabled" or "AI unavailable"
+
+That is the rule-based answer. To enable AI see [AI.md](AI.md). "AI unavailable" includes the
+reason (missing key, provider unreachable, invalid answer) — the rule-based answer is shown instead.
+
+## Hub returns 401
+
+The token is missing, wrong, revoked, or of the wrong role (agent tokens can only report; viewer
+tokens can only read). Check `wifi-monitor hub token list`.
+
+## MQTT: "MQTT disabled"
+
+`serve --mqtt` needs `pip install "wifi-monitor[mqtt]"` and `mqtt.host` in `config.json`.

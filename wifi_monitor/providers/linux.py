@@ -87,6 +87,15 @@ def parse_iw_link(text: str) -> Dict[str, Optional[float]]:
     out["rx"] = float(m.group(1)) if m else None
     m = re.search(r"tx bitrate:\s*([\d.]+)", text)
     out["tx"] = float(m.group(1)) if m else None
+    bitrate_lines = " ".join(l for l in text.splitlines() if "bitrate" in l)
+    m = re.search(r"\b(\d{2,3})MHz\b", bitrate_lines)
+    out["width"] = int(m.group(1)) if m else None
+    phy = None
+    for token, name in (("EHT-", "802.11be"), ("HE-", "802.11ax"), ("VHT-", "802.11ac"), ("MCS", "802.11n")):
+        if token in bitrate_lines:
+            phy = name
+            break
+    out["phy"] = phy
     return out
 
 
@@ -151,6 +160,8 @@ class LinuxProvider(WifiProvider):
             iface.signal_dbm = Measurement(int(link["signal_dbm"]), "dBm", "iw:signal", LIVE, confidence="high")
         if link.get("freq") and iface.frequency_mhz is None:
             iface.channel, iface.frequency_mhz, iface.band = resolve_channel(None, int(link["freq"]), None)
+        iface.channel_width_mhz = link.get("width") or iface.channel_width_mhz
+        iface.radio_type = link.get("phy") or iface.radio_type
         iface.rx_rate_mbps = link.get("rx") or iface.rx_rate_mbps
         iface.tx_rate_mbps = link.get("tx") or iface.tx_rate_mbps
 

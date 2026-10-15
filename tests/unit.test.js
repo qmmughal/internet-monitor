@@ -206,6 +206,29 @@ test('hidden SSID and missing signal render placeholders', () => {
   expect(hiddenRow.includes('null')).toBe(false);
 });
 
+/* ── Live features: AI/rule-based answers are escaped ───────────── */
+console.log('\nLiveFeatures.renderAnswer');
+const { LiveFeatures } = loadBrowserModules(['utils.js', 'api.js', 'live.js'], ['LiveFeatures'], {
+  document: { getElementById: () => null },
+  location: { protocol: 'file:' },
+  getComputedStyle: () => ({ getPropertyValue: () => '' }),
+});
+const answerHtml = LiveFeatures.renderAnswer({
+  source: 'ai', provider: '<i>p</i>', model: 'm',
+  answer: {
+    summary: '<script>alert(1)</script>',
+    observations: [{ fact: '<b>x</b>', evidence: 'y' }],
+    hypotheses: [{ cause: 'c', confidence: 'low', evidence: 'e' }],
+    recommendations: [{ action: '<img src=x onerror=alert(2)>', why: 'w', risk: 'low' }],
+    limitations: ['<u>l</u>'],
+  },
+});
+test('summary script tag is escaped', () => expect(answerHtml.includes('<script>')).toBe(false));
+test('recommendation markup is escaped', () => expect(answerHtml.includes('<img')).toBe(false));
+test('provider name is escaped', () => expect(answerHtml.includes('<i>p</i>')).toBe(false));
+test('recommendations are labelled as not applied', () => expect(answerHtml.includes('not applied automatically')).toBe(true));
+test('features are off without the API', () => expect(LiveFeatures.enabled()).toBe(false));
+
 /* ═══════════════════════════════════════════════════════════════
    SUMMARY
    ═══════════════════════════════════════════════════════════════ */

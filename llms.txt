@@ -9,7 +9,7 @@
 ## Project
 
 - Name: WiFi Monitor
-- Version: 1.1.0-dev
+- Version: 1.2.0-dev
 - License: MIT
 - Author: Qaiser Mehmood (qmmughal)
 - Repository: https://github.com/qmmughal/wifi-monitor
@@ -18,16 +18,17 @@
 ## Implemented
 
 - Connected Wi-Fi details from the OS: Windows netsh, Linux nmcli/iw, macOS system_profiler (macOS unverified on hardware)
-- Nearby access point list from the OS scan cache
-- Connectivity diagnostics: gateway, DNS, HTTPS, TCP latency/jitter, with evidence-based findings
-- CLI: status, scan, diagnose, monitor, capabilities, serve; --json; exit codes
-- Local API: GET /api/v1/status, /wifi/interfaces, /wifi/signal, /wifi/access-points, /network, /capabilities, /diagnostics; POST /api/v1/diagnostics
-- Dashboard with live/demo detection
+- Nearby access points, channel analysis and recommendations, Wi-Fi generation (4/5/6/6E/7) and width
+- Connectivity diagnostics with evidence-based findings; real throughput test (Cloudflare)
+- In-memory history with stats, baselines, explainable anomaly alerts, roaming/disconnect events
+- Device discovery (passive neighbour table, opt-in sweep), known devices, security observations, signal survey
+- Explanations: rule-based, or optional AI (Anthropic SDK or OpenAI-compatible/local), redacted and schema-validated
+- Hub + agents with token auth, Prometheus /metrics, MQTT with Home Assistant discovery
+- CLI: status, scan, diagnose, speedtest, channels, devices, security, survey, ask, monitor, history, alerts, serve, hub, agent
 
-## Not implemented (simulated only in demo mode, or planned)
+## Out of scope in this release
 
-- Download/upload throughput, LAN device discovery, history database, anomaly detection,
-  AI explanations, MCP server. See docs/IMPLEMENTATION_PLAN.md.
+- Persistent database (history is in memory by design) and an MCP server.
 
 ## Key files
 
@@ -36,7 +37,8 @@
 - wifi_monitor/server.py    — local API
 - src/                      — dashboard
 - docs/CAPABILITIES.md      — what each platform can measure
-- docs/ARCHITECTURE.md      — design and extension guide
+- docs/ARCHITECTURE.md      — design, API endpoints, anomaly rules
+- docs/AI.md, docs/DISTRIBUTED.md, docs/CONFIG.md
 
 ## Community
 

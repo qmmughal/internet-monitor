@@ -48,11 +48,11 @@
       </a>
     </nav>
     <div class="sidebar-footer">
-      <button class="theme-toggle" id="theme-toggle" title="Toggle theme">
+      <button type="button" class="theme-toggle" id="theme-toggle" title="Toggle theme" aria-label="Toggle light/dark theme">
         <svg id="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
         <svg id="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
       </button>
-      <a href="https://github.com/qmmughal/wifi-monitor" target="_blank" class="github-link" title="View on GitHub">
+      <a href="https://github.com/qmmughal/wifi-monitor" target="_blank" rel="noopener noreferrer" class="github-link" title="View on GitHub">
         <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/></svg>
         GitHub
       </a>
@@ -63,7 +63,7 @@
   <main class="main-content">
     <!-- Top Bar -->
     <header class="topbar">
-      <button class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar">
+      <button type="button" class="sidebar-toggle" id="sidebar-toggle" title="Toggle sidebar" aria-label="Toggle navigation">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
       <div class="topbar-title" id="page-title">Dashboard</div>
@@ -72,7 +72,7 @@
           <span class="status-dot active" id="status-dot"></span>
           <span id="status-text">Starting…</span>
         </div>
-        <button class="btn btn-primary" id="btn-refresh">
+        <button type="button" class="btn btn-primary" id="btn-refresh">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
           Refresh
         </button>
@@ -193,11 +193,18 @@
       <div class="card mt-4" id="diagnostics-card">
         <div class="card-header">
           <span class="card-title">Connectivity Check</span>
-          <button class="btn btn-primary btn-sm" id="btn-diagnose">Run check</button>
+          <button type="button" class="btn btn-primary btn-sm" id="btn-diagnose">Run check</button>
         </div>
         <div class="diag-result" id="diagnostics-result" aria-live="polite">
           <div class="empty-state">Tests the network link, router, DNS, HTTPS and latency, then explains what it finds. Nothing on your system is changed.</div>
         </div>
+        <form class="ask-row" id="ask-form" hidden>
+          <label class="visually-hidden" for="ask-input">Question about your connection</label>
+          <input class="input-sm ask-input" type="text" id="ask-input" maxlength="500" placeholder="Ask: why are my video calls unstable?" />
+          <button class="btn btn-outline btn-sm" type="submit" id="btn-ask">Explain</button>
+        </form>
+        <div class="small muted" id="ask-note"></div>
+        <div class="diag-result" id="ask-result" aria-live="polite"></div>
       </div>
     </section>
 
@@ -211,8 +218,8 @@
         <div class="card-header">
           <span class="card-title">Nearby Networks</span>
           <div class="card-actions">
-            <input class="input-sm" type="text" id="scanner-filter" placeholder="Filter networks…" />
-            <button class="btn btn-primary" id="btn-scan">
+            <input class="input-sm" type="text" id="scanner-filter" placeholder="Filter networks…" aria-label="Filter networks" />
+            <button type="button" class="btn btn-primary" id="btn-scan">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
               Scan
             </button>
@@ -222,14 +229,14 @@
           <table class="data-table" id="networks-table">
             <thead>
               <tr>
-                <th>Signal</th>
-                <th>SSID</th>
-                <th>BSSID</th>
-                <th>Band</th>
-                <th>Channel</th>
-                <th>Security</th>
-                <th>dBm</th>
-                <th>Quality</th>
+                <th scope="col">Signal</th>
+                <th scope="col">SSID</th>
+                <th scope="col">BSSID</th>
+                <th scope="col">Band</th>
+                <th scope="col">Channel</th>
+                <th scope="col">Security</th>
+                <th scope="col">dBm</th>
+                <th scope="col">Quality</th>
               </tr>
             </thead>
             <tbody id="networks-tbody">
@@ -249,6 +256,12 @@
           <canvas id="band-donut-chart" height="220"></canvas>
         </div>
       </div>
+      <div class="card mt-4" id="channel-card">
+        <div class="card-header"><span class="card-title">Channel Recommendation</span></div>
+        <div class="diag-result" id="channel-result">
+          <div class="empty-state">Run a scan to analyse channel congestion.</div>
+        </div>
+      </div>
     </section>
 
     <!-- ── DEVICES SECTION ────────────────────────────────────── -->
@@ -261,8 +274,9 @@
         <div class="card-header">
           <span class="card-title">Connected Devices</span>
           <div class="card-actions">
-            <input class="input-sm" type="text" id="device-filter" placeholder="Filter by name or IP…" />
-            <button class="btn btn-primary" id="btn-device-scan">
+            <input class="input-sm" type="text" id="device-filter" placeholder="Filter by name or IP…" aria-label="Filter devices" />
+            <label class="small probe-label" id="probe-label" hidden><input type="checkbox" id="device-probe" /> Active probe</label>
+            <button type="button" class="btn btn-primary" id="btn-device-scan">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
               Discover
             </button>
@@ -271,6 +285,11 @@
         <div class="devices-grid" id="devices-grid">
           <div class="empty-state">Click <strong>Discover</strong> to find devices on your network</div>
         </div>
+        <div class="small muted device-notes" id="device-notes"></div>
+      </div>
+      <div class="card mt-4" id="security-card" hidden>
+        <div class="card-header"><span class="card-title">Security Observations</span></div>
+        <div class="diag-result" id="security-result"></div>
       </div>
     </section>
 
@@ -291,7 +310,7 @@
               <div class="speed-phase" id="speed-phase">Ready</div>
             </div>
           </div>
-          <button class="btn btn-hero" id="btn-speedtest">Start Test</button>
+          <button type="button" class="btn btn-hero" id="btn-speedtest">Start Test</button>
         </div>
         <div class="speed-results">
           <div class="speed-result-card" id="result-ping">
@@ -338,33 +357,56 @@
     <section class="section hidden" id="section-history">
       <div class="section-header">
         <h1>Signal History</h1>
-        <p>Signal measurements recorded by this browser tab (stored locally in this browser)</p>
+        <p id="history-subtitle">Signal measurements recorded by this browser tab (stored locally in this browser)</p>
+      </div>
+      <div class="card mb-4" id="history-stats-card" hidden>
+        <div class="card-header">
+          <span class="card-title">Last Hour</span>
+          <span class="small muted" id="history-stats-note"></span>
+        </div>
+        <div class="stats-grid" id="history-stats"></div>
       </div>
       <div class="card">
         <div class="card-header">
           <span class="card-title">Signal Log</span>
           <div class="card-actions">
-            <button class="btn btn-outline" id="btn-export-csv">
+            <button type="button" class="btn btn-outline" id="btn-export-csv">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export CSV
             </button>
-            <button class="btn btn-outline" id="btn-export-json">
+            <button type="button" class="btn btn-outline" id="btn-export-json">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
               Export JSON
             </button>
-            <button class="btn btn-danger" id="btn-clear-history">Clear</button>
+            <button type="button" class="btn btn-danger" id="btn-clear-history">Clear</button>
           </div>
         </div>
         <canvas id="history-chart" height="200"></canvas>
         <div class="table-wrapper mt-4">
           <table class="data-table" id="history-table">
             <thead>
-              <tr><th>Timestamp</th><th>SSID</th><th>Signal (dBm)</th><th>Quality %</th><th>Channel</th><th>Band</th><th>Data</th></tr>
+              <tr><th scope="col">Timestamp</th><th scope="col">SSID</th><th scope="col">Signal (dBm)</th><th scope="col">Quality %</th><th scope="col">Channel</th><th scope="col">Band</th><th scope="col">Data</th></tr>
             </thead>
             <tbody id="history-tbody">
               <tr><td colspan="7" class="empty-state">No measurements recorded yet</td></tr>
             </tbody>
           </table>
+        </div>
+      </div>
+      <div class="charts-row mt-4">
+        <div class="card flex-1" id="events-card" hidden>
+          <div class="card-header"><span class="card-title">Events: Roaming &amp; Disconnects</span></div>
+          <div class="diag-result" id="events-list"></div>
+        </div>
+        <div class="card flex-1" id="survey-card">
+          <div class="card-header"><span class="card-title">Signal Survey</span></div>
+          <form class="ask-row" id="survey-form">
+            <label class="visually-hidden" for="survey-label">Location name</label>
+            <input class="input-sm ask-input" type="text" id="survey-label" maxlength="64" placeholder="Location, e.g. Kitchen" />
+            <button class="btn btn-outline btn-sm" type="submit" id="btn-survey">Record here</button>
+          </form>
+          <div class="small muted" id="survey-note">Walk to a spot, name it and record. Repeat in each room to find weak spots.</div>
+          <div class="diag-result" id="survey-result"></div>
         </div>
       </div>
     </section>
@@ -378,14 +420,15 @@
       <div class="alerts-layout">
         <div class="card">
           <div class="card-header"><span class="card-title">Alert Rules</span></div>
-          <div class="alert-rules">
+          <div class="diag-result" id="live-rules" hidden></div>
+          <div class="alert-rules" id="browser-rules">
             <div class="alert-rule">
               <div class="alert-rule-info">
                 <div class="alert-rule-name">Weak Signal</div>
                 <div class="alert-rule-desc">Notify when signal drops below threshold</div>
               </div>
               <div class="alert-rule-controls">
-                <input type="number" class="input-sm" id="threshold-signal" value="-75" min="-100" max="-30" />
+                <input type="number" class="input-sm" id="threshold-signal" aria-label="Weak signal threshold in dBm" value="-75" min="-100" max="-30" />
                 <span class="unit-label">dBm</span>
                 <label class="toggle"><input type="checkbox" id="rule-weak-signal" checked /><span class="toggle-slider"></span></label>
               </div>
@@ -414,7 +457,7 @@
                 <div class="alert-rule-desc">Notify when latency exceeds threshold</div>
               </div>
               <div class="alert-rule-controls">
-                <input type="number" class="input-sm" id="threshold-latency" value="100" min="1" max="9999" />
+                <input type="number" class="input-sm" id="threshold-latency" aria-label="Latency threshold in ms" value="100" min="1" max="9999" />
                 <span class="unit-label">ms</span>
                 <label class="toggle"><input type="checkbox" id="rule-latency" /><span class="toggle-slider"></span></label>
               </div>
@@ -424,7 +467,7 @@
         <div class="card">
           <div class="card-header">
             <span class="card-title">Recent Alerts</span>
-            <button class="btn btn-outline btn-sm" id="btn-clear-alerts">Clear All</button>
+            <button type="button" class="btn btn-outline btn-sm" id="btn-clear-alerts">Clear All</button>
           </div>
           <div class="alerts-list" id="alerts-list">
             <div class="empty-state">No alerts triggered yet</div>
@@ -446,6 +489,7 @@
   <script src="js/devices.js"></script>
   <script src="js/speedtest.js"></script>
   <script src="js/logger.js"></script>
+  <script src="js/live.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

@@ -133,6 +133,7 @@ def cmd_status(args) -> int:
                 ["Band / channel", f"{safe(iface.band)} / {safe(iface.channel)}"
                  + (f" ({iface.frequency_mhz} MHz)" if iface.frequency_mhz else "")],
                 ["Radio", safe(iface.radio_type)],
+                ["Generation", _generation(iface)],
                 ["Security", safe(iface.security)],
                 ["Link rate", _rate(iface)],
             ]
@@ -150,6 +151,16 @@ def cmd_status(args) -> int:
         table("Network", ["Field", "Value"], rows)
     out(f"[dim]Measured at {utc_now()} via {safe(wifi.source)}[/dim]")
     return EXIT_OK if wifi.ok else EXIT_UNAVAILABLE
+
+
+def _generation(iface) -> str:
+    from .standards import describe
+
+    std = describe(iface)
+    text = std["generation"] or "unknown (not reported by the OS)"
+    if std["channel_width_mhz"]:
+        text += f", {std['channel_width_mhz']} MHz wide"
+    return safe(text) + " [dim](this connection)[/dim]"
 
 
 def _rate(iface) -> str:
@@ -358,7 +369,8 @@ def cmd_monitor(args) -> int:
 def cmd_serve(args) -> int:
     from .server import serve
 
-    return serve(host=args.host, port=args.port, demo=args.demo, allow_remote=args.allow_remote)
+    return serve(host=args.host, port=args.port, demo=args.demo, allow_remote=args.allow_remote,
+                 collect=not args.no_collect, interval_s=args.interval, mqtt=args.mqtt)
 
 
 # ─── argument parsing ────────────────────────────────────────────
@@ -379,6 +391,11 @@ def build_parser() -> argparse.ArgumentParser:
   wifi-monitor monitor -o log.csv  live signal monitor, saved to CSV
   wifi-monitor serve               dashboard + local API on http://127.0.0.1:8765
   wifi-monitor capabilities        what this platform can measure
+  wifi-monitor speedtest           download/upload throughput (uses data)
+  wifi-monitor channels            channel congestion and recommendation
+  wifi-monitor devices             devices on your network (passive)
+  wifi-monitor ask "why is my wifi slow?"   plain-language explanation
+  wifi-monitor history / alerts    from a running `serve`
 
 legacy flags (v1.0): --scan, --signal, --export csv|json
 
@@ -410,7 +427,14 @@ exit codes: 0 ok · 1 problem found · 2 usage error · 3 data unavailable""",
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--demo", action="store_true", help="serve SIMULATED data")
     s.add_argument("--allow-remote", action="store_true", help="permit binding to a non-loopback address (unauthenticated!)")
+    s.add_argument("--interval", type=float, default=None, help="history sampling interval in seconds (default 10)")
+    s.add_argument("--no-collect", action="store_true", help="do not collect history in the background")
+    s.add_argument("--mqtt", action="store_true", help="publish samples to MQTT (configure in config.json)")
     s.set_defaults(func=cmd_serve)
+
+    from .commands import register
+
+    register(sub, common)
     return parser
 
 

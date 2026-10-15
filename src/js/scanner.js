@@ -95,6 +95,7 @@ const NetworkScanner = (() => {
       hint: wifi.hint,
       ip: net.local_ip ?? null,
       gateway: net.gateway ?? null,
+      standard: status.wifi_standard || null,
     };
     if (wifi.mode === 'unavailable') return snap;
     const iface = (wifi.data || []).find(i => i.connected);

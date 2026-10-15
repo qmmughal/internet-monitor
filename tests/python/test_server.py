@@ -116,11 +116,11 @@ def test_diagnostics_disabled_in_demo(make_server):
 
 def test_concurrent_diagnostics_rejected():
     app = server.App(provider=NoWifi(), route_fn=route, diagnostics_fn=fake_report)
-    app.diag_lock.acquire()
+    app.locks["diagnostics"].acquire()
     try:
         assert app.post("/api/v1/diagnostics")[0] == 409
     finally:
-        app.diag_lock.release()
+        app.locks["diagnostics"].release()
 
 
 def test_static_and_csp(make_server):

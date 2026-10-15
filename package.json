@@ -1,6 +1,6 @@
 {
   "name": "wifi-monitor",
-  "version": "1.1.0-dev",
+  "version": "1.2.0-dev",
   "description": "Local-first Wi-Fi monitoring and connectivity diagnostics: dashboard, CLI and read-only local API",
   "main": "src/index.html",
   "keywords": [

@@ -7,7 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased]
+## [Unreleased] — 1.2.0
+
+Focus: everything beyond the core, except a database and an MCP server (deliberately out of scope).
+
+### Added
+- **History & anomalies** (`serve`, `history`, `alerts`): background collector, in-memory history
+  with retention, rolling stats/percentiles, baseline vs previous hour, explainable rules (sudden
+  signal drop, sustained weak signal, latency spikes, router packet loss, slow DNS, disconnects,
+  repeated disconnects), alert acknowledge/clear, roaming and network-change events, CSV/JSON export.
+- **Throughput test** (`speedtest`, dashboard): real download/upload against Cloudflare with a data cap.
+- **Channel analysis** (`channels`, scanner page): weighted neighbour scores and transparent
+  recommendations; withheld for simulated data.
+- **Wi-Fi generation** (Wi-Fi 4/5/6/6E/7) and channel width from OS evidence; MLO reported as unavailable.
+- **Device discovery** (`devices`, devices page): passive neighbour table, opt-in bounded /24 sweep,
+  known devices with friendly names, new-device alerts, randomized-MAC detection, local OUI lookup.
+- **Security observations** (`security`): open/WEP/TKIP networks, router MAC change, ARP anomalies.
+- **Signal survey** (`survey`, history page): record signal per location and list weak spots.
+- **Explanations** (`ask`, dashboard): rule-based by default; optional AI via the Anthropic SDK
+  (`claude-opus-5-5`, structured output, refusal fallbacks) or any OpenAI-compatible/local model,
+  with redaction, prompt-injection defences, schema validation and preview.
+- **Distributed monitoring**: `hub` with hashed, revocable, role-separated tokens and TLS; `agent`
+  with identifier stripping and bounded queue; Prometheus `/metrics`; MQTT with Home Assistant discovery.
+- Docs: AI, DISTRIBUTED, CONFIG; `.env.example`.
+
+### Fixed
+- TCP latency to a hostname re-resolved DNS on every sample, inflating latency and jitter.
+- Opening the dashboard directly on `#history`/`#alerts` loaded before the data source was known.
+- HTML validation: button types, accessible names for icon buttons, table header scopes, `rel="noopener"`.
+
+## Unreleased — trustworthy core (PR #1)
 
 Focus: trustworthy measurements. Every value now carries its provenance
 (`live` / `estimated` / `simulated` / `unavailable`) and nothing is fabricated.
