@@ -12,10 +12,12 @@ Limitations (documented in docs/CAPABILITIES.md):
 from __future__ import annotations
 
 import re
+import time
 from typing import Dict, List, Optional, Tuple
 
 from ..models import ESTIMATED, LIVE, AccessPoint, Measurement, ProviderResult, WifiInterface
 from ..signal import percent_to_dbm_estimate, resolve_channel
+from ..runner import run
 from .base import WifiProvider, command_failure, to_float, to_int
 
 SOURCE = "netsh"
@@ -163,9 +165,64 @@ def _mac(val: Optional[str]) -> Optional[str]:
     return m.group(0).lower().replace("-", ":") if m else None
 
 
+ADAPTER_SCRIPT = r"""
+$ErrorActionPreference = 'SilentlyContinue'
+$out = @(Get-NetAdapter -IncludeHidden | Where-Object {
+    $_.PhysicalMediaType -like '*802.11*' -or $_.InterfaceDescription -match 'Wi-?Fi|Wireless|WLAN|802\.11' } |
+  Where-Object { $_.InterfaceDescription -notmatch 'Virtual|Direct' } | ForEach-Object {
+    $pnp = Get-PnpDevice -InstanceId $_.PnPDeviceID
+    [pscustomobject]@{ name = $_.Name; description = $_.InterfaceDescription; status = "$($_.Status)";
+      admin = "$($_.AdminStatus)"; pnp_status = "$($pnp.Status)"; problem = "$($pnp.Problem)" } })
+ConvertTo-Json -InputObject $out -Compress
+"""
+
+PNP_PROBLEMS = {
+    "CM_PROB_FAILED_POST_START": "Windows stopped the device because it reported a problem (Device Manager code 43)",
+    "CM_PROB_DISABLED": "the device is disabled in Device Manager (code 22)",
+    "CM_PROB_HARDWARE_DISABLED": "the device is disabled by the hardware/firmware (code 29)",
+    "CM_PROB_FAILED_START": "the device driver could not start (code 10)",
+    "CM_PROB_DRIVER_FAILED_LOAD": "the device driver failed to load (code 39)",
+    "CM_PROB_FAILED_INSTALL": "the driver is not installed correctly (code 28)",
+    "CM_PROB_PHANTOM": "the device is not currently connected (code 45)",
+}
+
+
+def adapter_health(runner) -> List[dict]:
+    from ..pwsh import run_json
+
+    data, err = run_json(ADAPTER_SCRIPT, timeout=20, runner=runner)
+    if err or data is None:
+        return []
+    return data if isinstance(data, list) else [data]
+
+
+def explain_adapters(adapters: List[dict]) -> Optional[Tuple[str, str]]:
+    """(error, hint) when a Wi-Fi adapter exists but is not usable, else None."""
+    for a in adapters:
+        desc = a.get("description") or a.get("name") or "Wi-Fi adapter"
+        problem = a.get("problem") or ""
+        if problem and problem not in ("CM_PROB_NONE", "0"):
+            reason = PNP_PROBLEMS.get(problem, f"Windows reports a device problem ({problem})")
+            return (f"Wi-Fi adapter '{desc}' is not working: {reason}",
+                    "Open Device Manager › Network adapters, check the device, and try updating or reinstalling its "
+                    "driver, or restart the computer. WiFi Monitor does not change device settings.")
+        if (a.get("admin") or "").lower() == "down" or (a.get("status") or "").lower() == "disabled":
+            return (f"Wi-Fi adapter '{desc}' is disabled",
+                    "Enable it in Settings › Network & internet › Advanced network settings.")
+    return None
+
+
+def radio_off(text: str) -> bool:
+    return bool(re.search(r"\b(Software|Hardware) Off\b", text))
+
+
 class WindowsProvider(WifiProvider):
     name = "windows-netsh"
     platform = "Windows"
+
+    def __init__(self, runner=run) -> None:
+        super().__init__(runner)
+        self._health_cache: Optional[Tuple[float, List[dict]]] = None
 
     def _netsh(self, *args: str) -> Tuple[Optional[str], Optional[ProviderResult]]:
         cmd = self._run(["netsh", "wlan", *args], timeout=8)
@@ -182,19 +239,36 @@ class WindowsProvider(WifiProvider):
             )
         return cmd.stdout, None
 
+    def _explain_missing(self, err: ProviderResult) -> ProviderResult:
+        """When netsh sees no wireless interface, check whether an adapter exists but is not working."""
+        if not err.error or "no Wi-Fi interface" not in err.error:
+            return err
+        now = time.monotonic()
+        if self._health_cache is None or now - self._health_cache[0] > 60:
+            self._health_cache = (now, adapter_health(self._run))
+        adapters = self._health_cache[1]
+        explained = explain_adapters(adapters)
+        if explained:
+            err.error, err.hint = explained
+            err.data = None
+        return err
+
     def interfaces(self) -> ProviderResult:
         text, err = self._netsh("show", "interfaces")
         if err:
-            return err
+            return self._explain_missing(err)
         parsed = parse_interfaces(text or "")
         if parsed is None:
             return ProviderResult(mode="unavailable", source=SOURCE, error="unrecognised netsh output", hint=LOCALE_HINT)
-        return ProviderResult(mode=LIVE, source=SOURCE, data=parsed)
+        hint = None
+        if not any(i.connected for i in parsed) and radio_off(text or ""):
+            hint = "Wi-Fi is switched off (airplane mode, the Wi-Fi toggle, or a hardware switch). Turn it on to connect."
+        return ProviderResult(mode=LIVE, source=SOURCE, data=parsed, hint=hint)
 
     def access_points(self) -> ProviderResult:
         text, err = self._netsh("show", "networks", "mode=bssid")
         if err:
-            return err
+            return self._explain_missing(err)
         parsed = parse_networks(text or "")
         if parsed is None:
             return ProviderResult(mode="unavailable", source=SOURCE, error="unrecognised netsh output", hint=LOCALE_HINT)

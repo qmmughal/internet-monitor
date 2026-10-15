@@ -16,7 +16,8 @@
 
 ---
 
-WiFi Monitor reads your Wi-Fi link from the operating system, runs a step-by-step
+WiFi Monitor watches your internet connection of any kind — Wi-Fi, Ethernet, VPN or mobile data —
+shows which apps are downloading and uploading, reads your Wi-Fi link from the operating system, runs a step-by-step
 connectivity check (link → router → DNS → HTTPS → latency), and explains what it finds
 with the evidence behind each conclusion. It runs on your machine; nothing is uploaded.
 
@@ -28,21 +29,33 @@ with the evidence behind each conclusion. It runs on your machine; nothing is up
 
 | Feature | Status |
 |---|---|
+| Live download/upload rates for **any connection type** (Wi-Fi, Ethernet, VPN, mobile, virtual) | ✅ `traffic`, dashboard |
+| **Which apps use the most internet** — downloaded/uploaded per app (last 5 min … 7 days, or right now) | ✅ `apps` — Windows without admin, Linux (`ss`), macOS (`nettop`) |
+| **Live connections per app** — who each app is talking to right now, listening ports | ✅ `connections` |
+| Wi-Fi adapter health (broken driver, disabled adapter, Wi-Fi switched off) | ✅ Windows |
 | Connected Wi-Fi details: SSID, BSSID, signal, band/channel/frequency, radio, security, link rate | ✅ Windows (`netsh`), Linux (`nmcli` + `iw`); macOS implemented, not yet verified on hardware |
 | Nearby access point list | ✅ From the OS scan list (see [capabilities](docs/CAPABILITIES.md)) |
 | Connectivity troubleshooter with findings, evidence, likely cause, next step, confidence | ✅ CLI and dashboard |
 | Default gateway and local IP | ✅ Windows, Linux, macOS |
 | Dashboard with live data via a local, loopback-only API | ✅ `wifi-monitor serve` |
-| Live signal monitor with CSV/JSON export (includes provenance columns) | ✅ CLI and dashboard |
-| Alerts: weak signal, high latency, crowded channel (AP count) | ✅ Dashboard |
-| Browser latency/jitter test (HTTP round-trip) | ✅ Real measurement |
-| Download/upload throughput test | ⏳ Not implemented — shown only as *simulated* in demo mode |
-| Device discovery on the LAN | ⏳ Not implemented — demo mode shows *simulated* devices |
-| History database, anomaly detection, AI explanations, MCP server | 🗺️ [Roadmap](docs/IMPLEMENTATION_PLAN.md) |
+| History with rolling stats, percentiles and baseline comparison (in memory, CSV/JSON export) | ✅ `serve`, `history` |
+| Explainable anomaly alerts: signal drop, sustained weak signal, latency spikes, slow DNS, packet loss, repeated disconnects | ✅ `serve`, `alerts` |
+| Roaming (BSSID change) and disconnect tracking | ✅ |
+| Download/upload throughput test (Cloudflare, data-capped) | ✅ `speedtest` |
+| Channel congestion analysis and transparent channel recommendations | ✅ `channels` |
+| Wi-Fi generation (4/5/6/6E/7) and channel width from OS evidence | ✅ where the OS reports it |
+| Device discovery (passive neighbour table; opt-in bounded sweep), known devices, new-device alerts | ✅ `devices` |
+| Security observations (open/WEP/TKIP networks, router MAC change) | ✅ `security` |
+| Guided signal survey to find weak spots | ✅ `survey` |
+| Plain-language explanations — rule-based, or AI (Claude or any OpenAI-compatible/local model), off by default | ✅ `ask` |
+| Multi-machine hub + agents with token auth, Prometheus metrics, MQTT / Home Assistant | ✅ `hub`, `agent`, `/metrics`, `serve --mqtt` |
+| Persistent database, MCP server | ✖ Not planned in this release (history is in memory by design) |
 
 ## 🚀 Quick start
 
-Requires **Python 3.9+**. No other dependencies are needed; [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
+Requires **Python 3.9+**. `pip install` also installs [psutil](https://github.com/giampaolo/psutil) (interface
+counters and per-app connections); [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
+No administrator rights are needed.
 
 ```bash
 git clone https://github.com/qmmughal/wifi-monitor.git
@@ -81,15 +94,27 @@ browsers cannot read Wi-Fi hardware, so all values are simulated and a banner sa
 ### All commands
 
 ```bash
-wifi-monitor status              # current Wi-Fi link, gateway and local IP
+wifi-monitor status              # active connection (any type), Wi-Fi link, gateway and local IP
+wifi-monitor traffic -n 10       # live download/upload per interface
+wifi-monitor apps --window 1h    # which apps used the most data (or --live for right now)
+wifi-monitor connections         # which apps are connected to where, right now
 wifi-monitor scan                # nearby access points
 wifi-monitor diagnose            # connectivity troubleshooter
+wifi-monitor speedtest           # download/upload throughput (uses up to 50 MB)
+wifi-monitor channels            # channel congestion + recommendation
+wifi-monitor devices [--probe]   # devices on your network; --name MAC "TV" to label one
+wifi-monitor security            # security observations for this connection
+wifi-monitor survey add Kitchen  # record signal here; `survey report` lists weak spots
+wifi-monitor ask "why are my calls unstable?"   # plain-language explanation
 wifi-monitor monitor -o log.csv  # live signal monitor, saved to CSV (or .json)
 wifi-monitor capabilities        # what this platform can measure
-wifi-monitor serve [--demo]      # dashboard + read-only local API
 
-# add --json to status/scan/diagnose/capabilities/monitor for machine-readable output
-# add --demo to status/scan/monitor/capabilities for clearly labelled simulated data
+wifi-monitor serve [--demo] [--mqtt]   # dashboard + local API + background history
+wifi-monitor history | alerts          # read history/alerts from a running `serve`
+wifi-monitor hub serve | hub token …   # central hub for other machines
+wifi-monitor agent --hub https://…     # report this machine to a hub
+
+# --json for machine-readable output; --demo for clearly labelled simulated data
 ```
 
 Exit codes: `0` ok · `1` diagnostics found a problem · `2` usage error · `3` data unavailable on this system.
@@ -109,28 +134,36 @@ Full details: [docs/CAPABILITIES.md](docs/CAPABILITIES.md). Problems: [docs/TROU
 
 ## 🔒 Privacy and security
 
-- Monitoring data stays on your machine. The dashboard keeps history only in your browser's `localStorage`.
-- **Network requests the tool makes:** `diagnose` (and the dashboard's Connectivity Check) contacts public test endpoints
-  (`www.google.com`, `cp.cloudflare.com`, `www.microsoft.com`, `1.1.1.1`, `8.8.8.8`). The browser latency test contacts
-  `www.cloudflare.com`. The dashboard page loads Chart.js and fonts from public CDNs.
+- Monitoring data stays on your machine; history lives in the `serve` process's memory. No account, no telemetry.
+- **Network requests the tool makes:** diagnostics and the background collector contact public test endpoints
+  (`www.google.com`, `cp.cloudflare.com`, `www.microsoft.com`, `www.cloudflare.com`, `1.1.1.1`, `8.8.8.8`);
+  `speedtest` transfers data with `speed.cloudflare.com`. The dashboard loads Chart.js and fonts from public CDNs.
+- **Off by default:** AI explanations (send a *redacted* summary to the provider you configure), the hub/agents and MQTT.
 - `wifi-monitor serve` binds to `127.0.0.1` only, rejects foreign `Host` headers (DNS rebinding), sends no CORS headers,
-  and exposes read-only endpoints. No request parameter ever reaches an OS command.
+  and requires a custom header on every POST. No request value ever reaches an OS command, and nothing changes your
+  router, DNS, firewall or OS settings.
 
-See [docs/PRIVACY.md](docs/PRIVACY.md) and [SECURITY.md](SECURITY.md).
+See [docs/PRIVACY.md](docs/PRIVACY.md), [docs/AI.md](docs/AI.md), [docs/DISTRIBUTED.md](docs/DISTRIBUTED.md) and
+[SECURITY.md](SECURITY.md). Settings: [docs/CONFIG.md](docs/CONFIG.md).
 
 ## 🏗️ Architecture
 
 ```text
-wifi_monitor/            Python package (standard library only)
+wifi_monitor/            Python package (standard library only; rich/anthropic/paho-mqtt optional)
   models.py              Measurement / provenance data model
   providers/             windows.py · linux.py · macos.py · demo.py
-  netinfo.py             default gateway + local IP
-  probes.py              bounded ping / TCP / DNS / HTTPS probes
+  netinfo.py, probes.py  gateway/local IP; bounded ping / TCP / DNS / HTTPS probes
   diagnostics.py         staged troubleshooter + explainable rules
-  cli.py                 command-line interface
-  server.py              local dashboard server + /api/v1 (read-only)
+  history.py             in-memory history, stats, anomaly rules, alerts, roaming events
+  collector.py           background sampler used by serve and agent
+  channels.py            channel analysis and recommendations
+  standards.py           Wi-Fi generation / width reporting
+  devices.py             neighbour-table discovery, known devices, security observations
+  speedtest.py, survey.py, ai.py, metrics.py, hub.py, mqtt.py
+  cli.py, commands.py    command-line interface
+  server.py              local dashboard server + /api/v1
 src/                     dashboard (vanilla JS, no build step)
-  js/api.js              live-vs-demo data source detection
+  js/api.js, js/live.js  data-source detection and API-backed features
 cli/wifi-monitor.py      backwards-compatible entry point
 tests/python/            pytest suite with captured OS output fixtures
 tests/unit.test.js       dashboard tests (loads the shipped JS)
@@ -152,9 +185,7 @@ non-English locales or other hardware is especially useful for improving the par
 
 ## 📋 Roadmap
 
-Completed work and next steps are tracked in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
-Next up: persistent history with retention, explainable anomaly detection, then an optional
-read-only MCP server and AI explanations (off by default).
+Completed work and remaining items are tracked in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
 
 ## 📄 License
 

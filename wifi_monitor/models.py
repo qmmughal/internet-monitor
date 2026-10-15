@@ -71,6 +71,7 @@ class WifiInterface:
     frequency_mhz: Optional[int] = None
     band: Optional[str] = None
     radio_type: Optional[str] = None
+    channel_width_mhz: Optional[int] = None
     security: Optional[str] = None
     rx_rate_mbps: Optional[float] = None
     tx_rate_mbps: Optional[float] = None
@@ -96,6 +97,7 @@ class AccessPoint:
     signal_dbm: Optional[int] = None
     signal_mode: str = UNAVAILABLE  # provenance of signal_dbm
     radio_type: Optional[str] = None
+    channel_width_mhz: Optional[int] = None
     connected: bool = False
 
     def to_dict(self) -> dict:

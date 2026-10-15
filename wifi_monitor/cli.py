@@ -108,10 +108,20 @@ def cmd_status(args) -> int:
     provider = get_provider(demo=args.demo)
     wifi = provider.interfaces()
     route = netinfo.default_route() if not args.demo else ProviderResult(mode=SIMULATED, source="demo", data={})
+    from .traffic import human_rate, measure
+
+    traffic = measure(0.5) if not args.demo else None
+    online = bool(route.ok or (traffic and traffic.get("primary")))
     if args.json:
         emit_json({"timestamp": utc_now(), "platform": platform.system(), "provider": provider.name,
-                   "wifi": wifi.to_dict(), "network": route.to_dict()})
-        return EXIT_OK if wifi.ok else EXIT_UNAVAILABLE
+                   "wifi": wifi.to_dict(), "network": route.to_dict(), "traffic": traffic})
+        return EXIT_OK if wifi.ok or online else EXIT_UNAVAILABLE
+
+    if traffic and traffic.get("mode") == "live" and traffic.get("primary"):
+        prim = next(i for i in traffic["interfaces"] if i["primary"])
+        link = f", {prim['link_speed_mbps']} Mbps link" if prim["link_speed_mbps"] else ""
+        out(f"[bold]Active connection:[/bold] {safe(prim['name'])} [dim]({prim['type']}{link})[/dim]  "
+            f"↓ {human_rate(prim['rx_bps'])}  ↑ {human_rate(prim['tx_bps'])}\n")
 
     demo_banner(args)
     if not wifi.ok:
@@ -133,6 +143,7 @@ def cmd_status(args) -> int:
                 ["Band / channel", f"{safe(iface.band)} / {safe(iface.channel)}"
                  + (f" ({iface.frequency_mhz} MHz)" if iface.frequency_mhz else "")],
                 ["Radio", safe(iface.radio_type)],
+                ["Generation", _generation(iface)],
                 ["Security", safe(iface.security)],
                 ["Link rate", _rate(iface)],
             ]
@@ -149,7 +160,17 @@ def cmd_status(args) -> int:
                 ["Route interface", safe(d.get("interface"))], ["Mode", mode_tag(route.mode)]]
         table("Network", ["Field", "Value"], rows)
     out(f"[dim]Measured at {utc_now()} via {safe(wifi.source)}[/dim]")
-    return EXIT_OK if wifi.ok else EXIT_UNAVAILABLE
+    return EXIT_OK if wifi.ok or online else EXIT_UNAVAILABLE
+
+
+def _generation(iface) -> str:
+    from .standards import describe
+
+    std = describe(iface)
+    text = std["generation"] or "unknown (not reported by the OS)"
+    if std["channel_width_mhz"]:
+        text += f", {std['channel_width_mhz']} MHz wide"
+    return safe(text) + " [dim](this connection)[/dim]"
 
 
 def _rate(iface) -> str:
@@ -208,7 +229,9 @@ def cmd_diagnose(args) -> int:
     if not args.json:
         out("[cyan]Running connectivity diagnostics…[/cyan]")
         on_stage = lambda s: out(f"  [dim]· {s}[/dim]")  # noqa: E731
-    report = run_diagnostics(cfg, Probes(wifi=provider.interfaces), on_stage=on_stage)
+    from .apps import activity_snapshot
+
+    report = run_diagnostics(cfg, Probes(wifi=provider.interfaces, activity=activity_snapshot), on_stage=on_stage)
     code = EXIT_OK if report.overall == "healthy" else EXIT_PROBLEM
     if args.json:
         emit_json(report.to_dict())
@@ -358,7 +381,8 @@ def cmd_monitor(args) -> int:
 def cmd_serve(args) -> int:
     from .server import serve
 
-    return serve(host=args.host, port=args.port, demo=args.demo, allow_remote=args.allow_remote)
+    return serve(host=args.host, port=args.port, demo=args.demo, allow_remote=args.allow_remote,
+                 collect=not args.no_collect, interval_s=args.interval, mqtt=args.mqtt)
 
 
 # ─── argument parsing ────────────────────────────────────────────
@@ -379,6 +403,11 @@ def build_parser() -> argparse.ArgumentParser:
   wifi-monitor monitor -o log.csv  live signal monitor, saved to CSV
   wifi-monitor serve               dashboard + local API on http://127.0.0.1:8765
   wifi-monitor capabilities        what this platform can measure
+  wifi-monitor speedtest           download/upload throughput (uses data)
+  wifi-monitor channels            channel congestion and recommendation
+  wifi-monitor devices             devices on your network (passive)
+  wifi-monitor ask "why is my wifi slow?"   plain-language explanation
+  wifi-monitor history / alerts    from a running `serve`
 
 legacy flags (v1.0): --scan, --signal, --export csv|json
 
@@ -410,7 +439,14 @@ exit codes: 0 ok · 1 problem found · 2 usage error · 3 data unavailable""",
     s.add_argument("--port", type=int, default=8765)
     s.add_argument("--demo", action="store_true", help="serve SIMULATED data")
     s.add_argument("--allow-remote", action="store_true", help="permit binding to a non-loopback address (unauthenticated!)")
+    s.add_argument("--interval", type=float, default=None, help="history sampling interval in seconds (default 10)")
+    s.add_argument("--no-collect", action="store_true", help="do not collect history in the background")
+    s.add_argument("--mqtt", action="store_true", help="publish samples to MQTT (configure in config.json)")
     s.set_defaults(func=cmd_serve)
+
+    from .commands import register
+
+    register(sub, common)
     return parser
 
 

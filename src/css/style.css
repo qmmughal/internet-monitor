@@ -1077,3 +1077,42 @@ code {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* ── Live features: stats, ask, survey ─────────────────────────── */
+.mb-4 { margin-bottom: 16px; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.ask-row { display: flex; gap: 8px; margin: 12px 0 6px; flex-wrap: wrap; }
+.ask-input { flex: 1; min-width: 200px; }
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 4px 0;
+}
+.stat-tile { background: var(--bg-input); border-radius: var(--radius-sm); padding: 12px; }
+.stat-title { font-size: 12px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+.stat-value { font-size: 22px; font-weight: 700; margin: 4px 0; font-family: var(--font-mono); }
+.probe-label { display: inline-flex; align-items: center; gap: 4px; color: var(--text-secondary); }
+.device-notes { margin-top: 12px; }
+.new-tag { background: rgba(56, 189, 248, 0.18); color: var(--accent); }
+.diag-finding.acked { opacity: 0.6; }
+
+/* ── Apps & traffic ────────────────────────────────────────────── */
+.mt-2 { margin-top: 8px; }
+.activity-row { display: flex; gap: 16px; align-items: stretch; flex-wrap: wrap; }
+.activity-rates { display: flex; flex-direction: column; gap: 12px; min-width: 180px; }
+.activity-chart { flex: 1; min-width: 260px; }
+#traffic-chart { height: 160px !important; max-height: 160px; width: 100% !important; }
+.link { color: var(--accent); }
+.usage-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-input); min-width: 80px; }
+.usage-bar .rx { background: var(--accent-3); }
+.usage-bar .tx { background: var(--accent); }
+.conn-app summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.conn-app summary .muted { font-weight: 400; }
+.conn-app ul { margin: 6px 0 0 18px; font-size: 12px; color: var(--text-secondary); }
+.warn-text { color: var(--accent-warn); }
+.app-cell { max-width: 460px; }
+.app-path { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 440px; }

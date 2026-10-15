@@ -78,8 +78,9 @@ def parse_system_profiler(text: str) -> Optional[Dict[str, List]]:
             cur = raw.get("spairport_current_network_information") or {}
             if connected and cur:
                 redacted = redacted or cur.get("_name") == "<redacted>"
-                ch, band, _width = _parse_channel(cur.get("spairport_network_channel"))
+                ch, band, width = _parse_channel(cur.get("spairport_network_channel"))
                 iface.channel, iface.frequency_mhz, iface.band = resolve_channel(ch, None, band)
+                iface.channel_width_mhz = width
                 iface.ssid = _ssid(cur.get("_name"))
                 iface.radio_type = cur.get("spairport_network_phymode")
                 iface.security = _security(cur.get("spairport_security_mode"))
@@ -97,7 +98,7 @@ def parse_system_profiler(text: str) -> Optional[Dict[str, List]]:
 
 
 def _ap_from(raw: Dict[str, Any], connected: bool) -> AccessPoint:
-    ch, band, _ = _parse_channel(raw.get("spairport_network_channel"))
+    ch, band, width = _parse_channel(raw.get("spairport_network_channel"))
     ch, freq, band = resolve_channel(ch, None, band)
     sig, _noise = _parse_signal_noise(raw.get("spairport_signal_noise"))
     return AccessPoint(
@@ -110,6 +111,7 @@ def _ap_from(raw: Dict[str, Any], connected: bool) -> AccessPoint:
         signal_dbm=sig,
         signal_mode=LIVE if sig is not None else "unavailable",
         radio_type=raw.get("spairport_network_phymode"),
+        channel_width_mhz=width,
         connected=connected,
     )
 

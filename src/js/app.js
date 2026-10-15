@@ -34,6 +34,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await DataSource.detect();
   applyModeUI();
+  await LiveFeatures.init();
+  TrafficView.init();
+  const hash = location.hash.replace('#', '');
+  if (hash) navigateTo(hash); // after detection, so sections load from the right data source
   startMonitoring();
 });
 
@@ -65,19 +69,18 @@ function applyModeUI() {
       + 'Start <code>wifi-monitor serve</code> (without <code>--demo</code>) to use it.</div>';
   }
 
-  const devBtn = document.getElementById('btn-device-scan');
-  if (!DeviceDiscovery.isAvailable()) {
-    devBtn.disabled = true;
-    DeviceDiscovery.renderDevices([]);
+  if (mode === 'live') {
     setText('kpi-devices-value', '—');
-    setText('kpi-devices-sub', 'Not available yet');
+    setText('kpi-devices-sub', 'Not scanned');
+    document.getElementById('devices-grid').innerHTML = '<div class="empty-state">Click <strong>Discover</strong> to list devices '
+      + 'from your computer’s neighbour table (passive, no packets sent).</div>';
   } else {
     setText('kpi-devices-sub', 'Simulated — not scanned');
   }
 
   setText('speed-note', DataSource.isSimulated()
     ? 'Download/upload values in demo mode are SIMULATED. Latency is measured for real by this browser.'
-    : 'Latency is the browser’s HTTP round-trip time (higher than ping). Download/upload throughput is not measured yet.');
+    : 'Measured by the local server against speed.cloudflare.com (uses up to ~50 MB of data).');
 }
 
 function setText(id, val) {
@@ -99,8 +102,6 @@ function initNavigation() {
   document.getElementById('sidebar-toggle').addEventListener('click', () => {
     document.getElementById('sidebar').classList.toggle('open');
   });
-  const hash = location.hash.replace('#', '');
-  if (hash) navigateTo(hash);
 }
 
 function navigateTo(section) {
@@ -119,11 +120,19 @@ function navigateTo(section) {
   location.hash = section;
 
   if (section === 'history') {
-    Logger.renderHistoryTable();
-    ChartManager.initHistoryChart(Logger.getHistory());
+    if (LiveFeatures.enabled()) {
+      LiveFeatures.refreshHistory();
+    } else {
+      Logger.renderHistoryTable();
+      ChartManager.initHistoryChart(Logger.getHistory());
+    }
   }
-  if (section === 'alerts') Logger.renderAlerts();
+  if (section === 'alerts') {
+    if (LiveFeatures.enabled()) LiveFeatures.showAlerts();
+    else Logger.renderAlerts();
+  }
   if (section === 'speedtest') ChartManager.initSpeedHistoryChart(SpeedTest.getResults());
+  if (section === 'apps') TrafficView.show();
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -143,26 +152,34 @@ function initControls() {
 
   document.getElementById('btn-device-scan').addEventListener('click', () => runDeviceScan());
   document.getElementById('device-filter').addEventListener('input', e => {
-    DeviceDiscovery.renderDevices(DeviceDiscovery.getDevices(), e.target.value);
+    if (LiveFeatures.isLive()) LiveFeatures.renderDevices(e.target.value);
+    else DeviceDiscovery.renderDevices(DeviceDiscovery.getDevices(), e.target.value);
   });
 
   document.getElementById('btn-speedtest').addEventListener('click', () => runSpeedTest());
   document.getElementById('btn-diagnose').addEventListener('click', () => runDiagnostics());
 
   document.getElementById('btn-export-csv').addEventListener('click', () => {
-    Logger.exportCSV();
+    if (LiveFeatures.enabled()) LiveFeatures.exportHistory('csv');
+    else Logger.exportCSV();
     Toast.success('Exported', 'Signal history exported as CSV');
   });
   document.getElementById('btn-export-json').addEventListener('click', () => {
-    Logger.exportJSON();
+    if (LiveFeatures.enabled()) LiveFeatures.exportHistory('json');
+    else Logger.exportJSON();
     Toast.success('Exported', 'Signal history exported as JSON');
   });
-  document.getElementById('btn-clear-history').addEventListener('click', () => {
-    Logger.clearHistory();
+  document.getElementById('btn-clear-history').addEventListener('click', async () => {
+    if (LiveFeatures.enabled()) {
+      if (!(await LiveFeatures.clearHistory())) return;
+    } else {
+      Logger.clearHistory();
+    }
     Toast.info('Cleared', 'History has been cleared');
   });
-  document.getElementById('btn-clear-alerts').addEventListener('click', () => {
-    Logger.clearAlerts();
+  document.getElementById('btn-clear-alerts').addEventListener('click', async () => {
+    if (LiveFeatures.enabled()) await LiveFeatures.clearAlerts();
+    else Logger.clearAlerts();
     Toast.info('Cleared', 'All alerts cleared');
   });
 
@@ -192,13 +209,16 @@ async function tickMonitor() {
     if (snap.signal != null) State.lastGoodTs = snap.ts;
 
     renderSnapshot(snap);
-    Logger.logSignal(snap);
-    Logger.checkAlerts(snap);
+    TrafficView.onSnapshot(snap);
+    if (!DataSource.usesApi()) { // with the API, the server records history and raises alerts
+      Logger.logSignal(snap);
+      Logger.checkAlerts(snap);
+    }
     ChartManager.pushSignalPoint(formatTime(new Date(snap.ts)), snap.signal); // null leaves a visible gap
     ChartManager.drawGauge('gauge-canvas', document.getElementById('gauge-value'), snap.signal);
     NetworkScanner.renderChannelMap(snap.network?.channel ?? null, snap.network?.band ?? null);
 
-    if (State.currentSection === 'history') {
+    if (State.currentSection === 'history' && !DataSource.usesApi()) {
       Logger.renderHistoryTable();
       ChartManager.initHistoryChart(Logger.getHistory());
     }
@@ -215,7 +235,12 @@ function renderSnapshot(snap) {
   // Status indicator
   const dot = document.getElementById('status-dot');
   let status;
-  if (snap.mode === 'unavailable') {
+  const wired = snap.traffic && snap.traffic.mode === 'live' && snap.traffic.primary_type
+    ? snap.traffic.primary_type : null;
+  if (snap.mode === 'unavailable' && wired) {
+    status = `Live · ${wired === 'ethernet' ? 'Ethernet' : wired}`;
+    dot.className = 'status-dot active';
+  } else if (snap.mode === 'unavailable') {
     status = 'Wi-Fi unavailable';
     dot.className = 'status-dot warning';
   } else if (snap.simulated) {
@@ -234,14 +259,22 @@ function renderSnapshot(snap) {
       `${SignalUtils.qualityLabel(snap.signal)} · ${MODE_TEXT[snap.signalMode] || snap.signalMode}`);
   } else {
     setText('kpi-signal-value', '—');
-    setText('kpi-signal-quality', snap.mode === 'unavailable' ? (snap.error || 'Unavailable') : 'Not reported by OS');
+    const why = snap.mode === 'unavailable' ? (snap.error || 'Unavailable') : 'Not reported by OS';
+    const short = /not working/.test(why) ? 'Wi-Fi adapter not working' : /disabled/.test(why) ? 'Wi-Fi adapter disabled' : why;
+    setText('kpi-signal-quality', short.length > 70 ? `${short.slice(0, 67)}…` : short);
+    document.getElementById('kpi-signal-quality').title = [why, snap.hint].filter(Boolean).join(' — ');
   }
 
   // Network KPI
   if (net) {
     const name = net.ssid || (snap.simulated ? '—' : 'Name hidden by OS');
     setText('kpi-network-value', name.length > 14 ? `${name.substring(0, 14)}…` : name);
-    setText('kpi-network-band', [net.band, net.channel != null ? `Ch ${net.channel}` : null].filter(Boolean).join(' · ') || '—');
+    setText('kpi-network-band', [snap.standard?.generation, net.band, net.channel != null ? `Ch ${net.channel}` : null]
+      .filter(Boolean).join(' · ') || '—');
+  } else if (wired && snap.traffic.primary) {
+    const name = snap.traffic.primary;
+    setText('kpi-network-value', name.length > 14 ? `${name.substring(0, 14)}…` : name);
+    setText('kpi-network-band', `${wired} connection · Wi-Fi not in use`);
   } else {
     setText('kpi-network-value', '—');
     setText('kpi-network-band', snap.hint || snap.error || '—');
@@ -289,7 +322,8 @@ async function runNetworkScan() {
     ChartManager.initNetworksBarChart(networks);
     ChartManager.initBandDonutChart(networks);
     NetworkScanner.renderChannelMap(State.snap?.network?.channel ?? null, State.snap?.network?.band ?? null);
-    Logger.checkCongestion(networks, State.snap?.network, simulated);
+    if (LiveFeatures.enabled()) LiveFeatures.renderChannels();
+    else Logger.checkCongestion(networks, State.snap?.network, simulated);
     Toast.success(simulated ? 'Scan complete (simulated)' : 'Scan complete', hint || `Found ${networks.length} access points`);
   } catch (err) {
     tbody.innerHTML = `<tr><td colspan="8" class="empty-state">Scan unavailable: ${escapeHTML(err.message)}`
@@ -314,6 +348,27 @@ function filterNetworkTable(query) {
 async function runDeviceScan() {
   const btn = document.getElementById('btn-device-scan');
   const grid = document.getElementById('devices-grid');
+  if (LiveFeatures.isLive()) {
+    btn.disabled = true;
+    grid.innerHTML = '<div class="empty-state scanning">Reading the neighbour table…</div>';
+    try {
+      const result = await LiveFeatures.scanDevices();
+      if (result) {
+        const n = result.result.data.length;
+        setText('kpi-devices-value', n);
+        setText('kpi-devices-sub', `${result.new_devices.length} new · neighbour table`);
+        Toast.success('Discovery complete', `${n} devices, ${result.new_devices.length} new`);
+      } else {
+        LiveFeatures.renderDevices('');
+      }
+    } catch (err) {
+      grid.innerHTML = `<div class="empty-state">Discovery unavailable: ${escapeHTML(err.message)}</div>`;
+      Toast.error('Discovery unavailable', err.message);
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
   btn.disabled = true;
   btn.textContent = 'Discovering…';
   grid.innerHTML = '<div class="empty-state scanning">Generating simulated devices…</div>';
@@ -335,7 +390,40 @@ async function runDeviceScan() {
 /* ═══════════════════════════════════════════════════════════════
    Speed / latency test
    ═══════════════════════════════════════════════════════════════ */
+async function runLiveSpeedTest() {
+  const btn = document.getElementById('btn-speedtest');
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  ['result-ping-value', 'result-download-value', 'result-upload-value', 'result-jitter-value'].forEach(id => setText(id, '—'));
+  setText('speed-phase', 'Testing (about 20 s)…');
+  setText('speed-value', '…');
+  try {
+    const r = await LiveFeatures.runSpeedTest();
+    if (r.mode !== 'live') throw new Error((r.errors || []).join(', ') || 'no data');
+    setText('result-ping-value', r.latency.median_ms ?? 'n/a');
+    setText('result-jitter-value', r.latency.jitter_ms ?? 'n/a');
+    setText('result-download-value', r.download_mbps ?? 'n/a');
+    setText('result-upload-value', r.upload_mbps ?? 'n/a');
+    setText('speed-value', (r.download_mbps ?? 0).toFixed(1));
+    ChartManager.drawSpeedGauge('speed-gauge', r.download_mbps || 0);
+    SpeedTest.getResults().push({
+      ts: Date.now(), ping: r.latency.median_ms, jitter: r.latency.jitter_ms,
+      download: r.download_mbps, upload: r.upload_mbps, throughputSimulated: false,
+    });
+    ChartManager.initSpeedHistoryChart(SpeedTest.getResults());
+    setText('speed-phase', `Done · ${r.data_used_mb} MB used`);
+    Toast.success('Speed test complete', `↓ ${r.download_mbps} Mbps · ↑ ${r.upload_mbps} Mbps · ${r.latency.median_ms} ms`);
+  } catch (err) {
+    setText('speed-phase', 'Failed');
+    Toast.error('Speed test failed', err.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Start Test';
+  }
+}
+
 async function runSpeedTest() {
+  if (LiveFeatures.isLive()) return runLiveSpeedTest();
   if (SpeedTest.isRunning()) return;
   const btn = document.getElementById('btn-speedtest');
   btn.textContent = 'Running…';

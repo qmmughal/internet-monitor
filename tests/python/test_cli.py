@@ -31,7 +31,7 @@ def no_wifi(monkeypatch):
 def test_status_json_unavailable_never_fabricates(no_wifi, capsys):
     code = cli.main(["status", "--json"])
     data = json.loads(capsys.readouterr().out)
-    assert code == cli.EXIT_UNAVAILABLE
+    assert code == cli.EXIT_OK  # online through another connection (default route present)
     assert data["wifi"]["mode"] == "unavailable" and data["wifi"]["data"] is None
     assert data["network"]["data"]["gateway"] == "192.168.1.1"
 

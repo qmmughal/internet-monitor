@@ -104,25 +104,46 @@ Legend: ✅ done · 🔄 in progress · ⬜ not started
 - 🔄 CI rewritten (no `npm ci` without lockfile; Python tests on Linux/Windows/macOS). **Not yet run on GitHub** — verify on first push.
 - ✅ Docs: README, capability matrix, INSTALLATION, TROUBLESHOOTING, PRIVACY.
 
-### P2 — historical intelligence (next)
-- ⬜ SQLite history store with schema version + retention + clear/export.
-- ⬜ Background collector in `serve` (configurable interval).
-- ⬜ Rolling stats, baselines, explainable anomaly rules.
-- ⬜ Alert management backed by real observations only.
-- ⬜ Dashboard history chart from the API; diagnostic report view.
+### P2 — historical intelligence (session 2; no database by request)
+- ✖ SQLite history store — **out of scope by owner decision**; history is an in-memory ring buffer
+  with configurable retention, clear and CSV/JSON export.
+- ✅ Background collector in `serve` (configurable interval; latency probes every N samples).
+- ✅ Rolling stats, percentiles, baseline vs previous hour, explainable anomaly rules.
+- ✅ Alert management (cooldown, acknowledge, clear) backed by real observations; simulated flagged.
+- ✅ Dashboard history/alerts from the API; diagnostics + explanation view.
 
 ### P3 — AI copilot and MCP
-- ⬜ Provider-independent LLM interface (disabled by default; redaction; schema-validated output).
-- ⬜ Read-only MCP server (official `mcp` SDK, stdio transport) wrapping the same services.
+- ✅ Provider-independent interface: Anthropic SDK and OpenAI-compatible/local; off by default;
+  redaction; prompt-injection defences; schema validation; rule-based fallback; payload preview.
+- ✖ MCP server — **out of scope by owner decision**.
 
 ### P4 — advanced wireless
-- ⬜ Channel analysis and recommendations from real scans only.
-- ⬜ BSSID roaming tracker.
-- ⬜ Wi-Fi 6E/7/MLO capability reporting where the OS exposes it.
-- ⬜ Real device discovery (OS ARP/neighbour table first; active probing opt-in and bounded).
+- ✅ Channel analysis and recommendations from real scans only.
+- ✅ BSSID roaming / network-change / disconnect tracking.
+- ✅ Wi-Fi generation (4/5/6/6E/7) and width where the OS exposes it; MLO reported unavailable.
+- ✅ Device discovery (neighbour table; opt-in bounded sweep), known devices, new-device alerts.
+- ✅ Security observations; guided signal survey.
+- ✅ Real throughput test (Cloudflare).
 
 ### P5 — distributed monitoring
-- ⬜ Prometheus `/metrics`, then authenticated remote agents.
+- ✅ Prometheus `/metrics` (local and hub).
+- ✅ Hub + agents: hashed role-separated tokens, revocation, TLS-or-explicit-opt-out, rate/size limits.
+- ✅ MQTT with Home Assistant discovery (optional dependency).
+
+### Session 3 — any connection type and per-app usage
+- ✅ Interface-agnostic traffic monitoring (psutil), throughput in history/metrics/MQTT/hub.
+- ✅ Per-app bytes: Windows usage records (WinRT, no admin), Linux `ss`, macOS `nettop` (unverified).
+- ✅ Per-app rates now and open connections per app; dashboard Apps & Traffic page.
+- ✅ Windows Wi-Fi adapter health (found a real code-43 failure on the dev machine).
+
+### Remaining / ideas
+- ⬜ Real-time (sub-second) per-app rates on Windows would need ETW or TCP EStats, which require admin.
+- ⬜ Per-app UDP attribution on Linux (would need eBPF/pcap and root).
+- ⬜ Verify Windows parsing on a machine with a Wi-Fi adapter; Linux and macOS on real hardware.
+- ⬜ Non-English `netsh` parsing (needs sample output per locale), or native WLAN API via ctypes.
+- ⬜ Hub token expiry and mTLS; hub persistence.
+- ⬜ Dashboard: per-section browser tests (current coverage is unit tests + API tests + screenshots).
+- ⬜ Evaluate a statistical anomaly model once real history has been collected.
 
 ---
 
@@ -145,6 +166,23 @@ Verified in session 1:
 Not verified (needs other hardware/OS): Windows with a Wi-Fi adapter, Linux, macOS,
 non-English Windows beyond the "refuse to guess" path, the GitHub Actions workflow.
 
-**Recommended next task:** P2 SQLite history store + background collector in
-`serve`, then wire the dashboard history view to it. Before that, run the CLI once on a
-Windows laptop with Wi-Fi (and Location enabled) to confirm the `netsh` parser on real output.
+### Session 2 (2026-10-15)
+Implemented P2–P5 except the database and MCP server (owner decision). Branch `feat/phases-2-5`.
+
+Verified in session 2 on the same Ethernet-only Windows machine:
+- `pytest`: 255 passed. `npm test`: 51 passed. `html-validate`: clean. `node --check` on all JS.
+- Real runs: `devices` (3 devices from `arp -a`, baseline then no false "new"), `security`,
+  `speedtest --max-mb 10` (11.6 / 16.5 Mbps), `ask` (rule-based), `channels` (honest unavailable),
+  `survey` (demo, labelled simulated).
+- `serve`: collector produced real router/internet/DNS samples; history/stats/export/alerts/devices/
+  metrics/AI endpoints exercised; live dashboard history page screenshot checked.
+- Hub + agent end to end on loopback: identifiers stripped, 401 without token and with the wrong role.
+- Real `anthropic` SDK 1.14 accepted the request parameters (checked offline against a dead endpoint;
+  no API call was made). paho-mqtt 2.x client construction path present; no broker was available.
+
+Not verified: real Claude/OpenAI-compatible responses, a real MQTT broker / Home Assistant, the hub
+over TLS, Wi-Fi-specific features on real Wi-Fi hardware, click-driven dashboard flows
+(devices/speed test/survey/explain were verified through their API endpoints).
+
+**Recommended next task:** run on a Wi-Fi laptop (Windows with Location enabled, and Linux) to
+confirm parsers, roaming events and channel recommendations on real data.

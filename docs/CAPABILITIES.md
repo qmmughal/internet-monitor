@@ -67,9 +67,57 @@ utilization or interference.
 
 No feature requires administrator/root rights.
 
-## Not yet available
+## Traffic and per-app usage (any connection type)
 
-- Real download/upload throughput measurement.
-- LAN device discovery (ARP / neighbour table).
-- Wi-Fi 6E/7 capability detection, MLO, channel width (only the band/channel is reported).
-- Non-English Windows parsing.
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Live rates per interface (Wi-Fi, Ethernet, VPN, mobile, virtual) | ✅ psutil | ✅ psutil | ✅ psutil |
+| Primary interface | ✅ owner of the default-route IP | ✅ | ✅ |
+| Interface type | inferred from the name (labelled) | inferred | inferred |
+| Bytes per app over a period | ✅ Windows network usage records (Settings › Data usage), any window up to 30 days, includes apps that have exited | — | — |
+| Per-app rates now | ✅ difference of those records; lags ~30–60 s | ✅ `ss -tinp` per-socket TCP counters (own processes; all with root); real time | ✅ `nettop` deltas (unverified on hardware) |
+| Open connections per app (remote IP, port, state) | ✅ psutil | ✅ psutil (own processes; all with root) | ⚠️ psutil needs administrator rights |
+| Admin required | No | No (root shows other users' processes) | For connections only |
+
+Measured on Windows: a 20 MB download appeared as 19.77 MB in the per-app records 25–40 s later.
+Connections show *who* an app talks to, not how much; UDP traffic on Linux is not attributed per app.
+
+## Wi-Fi adapter health (Windows)
+
+When `netsh` reports no wireless interface, WiFi Monitor checks whether a Wi-Fi adapter exists but
+is broken (Device Manager problem code, e.g. code 43), disabled, or switched off (airplane mode /
+radio off), and says which. It never changes device settings.
+
+## Wi-Fi generation and channel width
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Generation (Wi-Fi 4/5/6/6E/7) | ✅ from `Radio type` | ✅ from `iw` bitrate (HT/VHT/HE/EHT) | ✅ from PHY mode |
+| Channel width | ❌ | ✅ from `iw` | ✅ |
+| Multi-Link Operation (MLO) | ❌ reported as unavailable | ❌ | ❌ |
+
+These describe the current connection as negotiated, not the router's maximum capability.
+Wi-Fi 7 is never inferred from an SSID or a 6 GHz frequency.
+
+## Devices on the network
+
+| | Windows | Linux | macOS |
+|---|---|---|---|
+| Source | `arp -a` | `ip neigh` | `arp -an` |
+| Passive (default) | ✅ no packets sent | ✅ | ✅ |
+| Active sweep (`--probe`) | ✅ one ping per address of the private /24 | ✅ | ✅ |
+| Vendor names | only with an OUI file (e.g. IEEE `oui.txt` in the config dir) | ✅ if `ieee-data`/nmap/wireshark files are installed | ✅ with nmap/wireshark files |
+
+Randomized (private) MAC addresses are flagged; their vendor is unknowable.
+
+## Throughput
+
+`speedtest` downloads from and uploads to `speed.cloudflare.com` over one HTTPS connection,
+capped by data budget (default 50 MB) and time. It reports the largest successful transfer.
+
+## Not available
+
+- Non-English Windows `netsh` parsing (reported as unavailable, not guessed).
+- MLO and per-link Wi-Fi 7 data.
+- Measured RF interference or channel utilisation (channel scores are neighbour counts).
+- Persistent history across restarts (by design in this release).

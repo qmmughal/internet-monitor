@@ -206,6 +206,40 @@ test('hidden SSID and missing signal render placeholders', () => {
   expect(hiddenRow.includes('null')).toBe(false);
 });
 
+/* ── Live features: AI/rule-based answers are escaped ───────────── */
+console.log('\nLiveFeatures.renderAnswer');
+const { LiveFeatures } = loadBrowserModules(['utils.js', 'api.js', 'live.js'], ['LiveFeatures'], {
+  document: { getElementById: () => null },
+  location: { protocol: 'file:' },
+  getComputedStyle: () => ({ getPropertyValue: () => '' }),
+});
+const answerHtml = LiveFeatures.renderAnswer({
+  source: 'ai', provider: '<i>p</i>', model: 'm',
+  answer: {
+    summary: '<script>alert(1)</script>',
+    observations: [{ fact: '<b>x</b>', evidence: 'y' }],
+    hypotheses: [{ cause: 'c', confidence: 'low', evidence: 'e' }],
+    recommendations: [{ action: '<img src=x onerror=alert(2)>', why: 'w', risk: 'low' }],
+    limitations: ['<u>l</u>'],
+  },
+});
+test('summary script tag is escaped', () => expect(answerHtml.includes('<script>')).toBe(false));
+test('recommendation markup is escaped', () => expect(answerHtml.includes('<img')).toBe(false));
+test('provider name is escaped', () => expect(answerHtml.includes('<i>p</i>')).toBe(false));
+test('recommendations are labelled as not applied', () => expect(answerHtml.includes('not applied automatically')).toBe(true));
+test('features are off without the API', () => expect(LiveFeatures.enabled()).toBe(false));
+
+/* ── Traffic view formatting ───────────────────────────────────── */
+console.log('\nTrafficView');
+const { TrafficView } = loadBrowserModules(['utils.js', 'api.js', 'traffic.js'], ['TrafficView'], {
+  document: { getElementById: () => null },
+  location: { protocol: 'file:' },
+});
+test('rates are shown in bits per second', () => expect(TrafficView.rate(125000)).toBe('1.0 Mbps'));
+test('small rates in kbps', () => expect(TrafficView.rate(500)).toBe('4.0 kbps'));
+test('missing rate is a dash, not zero', () => expect(TrafficView.rate(null)).toBe('—'));
+test('bytes formatting', () => expect(TrafficView.bytes(1500000)).toBe('1.5 MB'));
+
 /* ═══════════════════════════════════════════════════════════════
    SUMMARY
    ═══════════════════════════════════════════════════════════════ */

@@ -37,13 +37,25 @@ Current protections:
   CORS headers, sets a Content-Security-Policy on the page, blocks path traversal, and only
   exposes read-only data. The single POST endpoint (run diagnostics) requires a custom header
   and an absent or loopback `Origin`, and allows one run at a time.
-- No credentials are used or stored.
+- POST bodies must be JSON objects of at most 16 KB; every field is type- and range-checked.
+- Device discovery is passive by default; the active sweep is opt-in, limited to the local
+  private /24, one ping per address, bounded concurrency and time.
+- AI explanations (off by default): identifiers redacted unless opted in; measured strings are
+  sanitised, delimited and declared untrusted to the model (prompt-injection defence); the model has
+  no tools; output is schema-validated and never executed; keys come only from environment variables.
+- The hub authenticates every request with role-separated bearer tokens stored as SHA-256 hashes,
+  requires TLS off-loopback unless explicitly overridden, rate-limits and size-limits reports, and
+  takes agent identity from the token. See [docs/DISTRIBUTED.md](docs/DISTRIBUTED.md).
+- Secrets (API keys, MQTT password, agent tokens) are read from environment variables, never
+  written to config files or logs.
 
 Known limitations:
 
 - The local API is unauthenticated. Any process running as your user (or on your network, if
-  you use `--allow-remote`) can read Wi-Fi details from it.
+  you use `--allow-remote`) can read Wi-Fi details from it and trigger actions such as a speed test.
+- Hub tokens do not expire and there is no mTLS.
 - The dashboard loads Chart.js and fonts from public CDNs.
+- Security observations are heuristics (e.g. a changed router MAC); they are not intrusion detection.
 
 Out of scope: attacks requiring prior code execution as the user, physical access, or social
 engineering.

@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wifi-monitor"
-version = "1.1.0.dev0"
-description = "Local-first Wi-Fi monitoring and connectivity diagnostics (CLI, dashboard and read-only local API)"
+version = "1.3.0.dev0"
+description = "Local-first Wi-Fi monitoring, diagnostics and network intelligence (CLI, dashboard, local API, optional AI and integrations)"
 readme = "README.md"
 license = { text = "MIT" }
 requires-python = ">=3.9"
@@ -19,11 +19,15 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: System :: Networking :: Monitoring",
 ]
-# No required runtime dependencies: everything works with the standard library.
-dependencies = []
+# psutil: interface counters and per-app connections. Everything else uses the standard library;
+# features that need psutil report themselves unavailable if it is missing.
+dependencies = ["psutil>=5.9"]
 
 [project.optional-dependencies]
 rich = ["rich>=13"]
+ai = ["anthropic>=1.0; python_version >= '3.10'"]   # only for ai.provider = "anthropic"
+mqtt = ["paho-mqtt>=1.6"]
+all = ["rich>=13", "anthropic>=1.0; python_version >= '3.10'", "paho-mqtt>=1.6"]
 dev = ["rich>=13", "pytest>=7"]
 
 [project.scripts]
