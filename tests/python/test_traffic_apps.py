@@ -4,8 +4,8 @@ from collections import namedtuple
 
 import pytest
 
-from wifi_monitor import apps, traffic
-from wifi_monitor.runner import CommandResult
+from internet_monitor import apps, traffic
+from internet_monitor.runner import CommandResult
 
 Counters = namedtuple("Counters", "bytes_sent bytes_recv")
 Stats = namedtuple("Stats", "isup speed")

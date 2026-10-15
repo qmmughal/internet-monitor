@@ -1,5 +1,5 @@
 /**
- * logger.js — Signal history, alerts and export for WiFi Monitor
+ * logger.js — Signal history, alerts and export for Internet Monitor
  *
  * Every history entry and alert records whether it came from a live,
  * estimated or simulated measurement.
@@ -8,7 +8,7 @@
 'use strict';
 
 const Logger = (() => {
-  const STORAGE_KEY = 'wifimonitor_history_v2';
+  const STORAGE_KEY = 'internetmonitor_history_v2';
   const MAX_ENTRIES = 2000;
   const MAX_ALERTS = 200;
   let _history = [];
@@ -29,7 +29,8 @@ const Logger = (() => {
         _history = Array.isArray(parsed.history) ? parsed.history : [];
         _alertHistory = Array.isArray(parsed.alerts) ? parsed.alerts : [];
       }
-      localStorage.removeItem('wifimonitor_history'); // v1 data had no provenance; do not mix it in
+      // Older keys: v1 data had no provenance; 'wifimonitor_*' predates the rename to Internet Monitor.
+      ['wifimonitor_history', 'wifimonitor_history_v2'].forEach(k => localStorage.removeItem(k));
     } catch (_) {
       _history = [];
       _alertHistory = [];
@@ -191,12 +192,12 @@ const Logger = (() => {
     const rows = _history.map(h => [
       new Date(h.ts).toISOString(), h.ssid ?? '', h.signal, h.quality, h.channel ?? '', h.band ?? '', h.mode, h.source ?? '',
     ]);
-    downloadFile(arrayToCSV(headers, rows), `wifi_monitor_${Date.now()}.csv`, 'text/csv');
+    downloadFile(arrayToCSV(headers, rows), `internet_monitor_${Date.now()}.csv`, 'text/csv');
   }
 
   function exportJSON() {
     const data = _history.map(h => ({ ...h, timestamp: new Date(h.ts).toISOString(), is_simulated: h.mode === 'simulated' }));
-    downloadFile(JSON.stringify(data, null, 2), `wifi_monitor_${Date.now()}.json`, 'application/json');
+    downloadFile(JSON.stringify(data, null, 2), `internet_monitor_${Date.now()}.json`, 'application/json');
   }
 
   function clearHistory() {

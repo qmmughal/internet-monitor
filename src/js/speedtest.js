@@ -1,5 +1,5 @@
 /**
- * speedtest.js — Latency test for WiFi Monitor
+ * speedtest.js — Latency test for Internet Monitor
  *
  * Latency/jitter: real HTTP round-trip timings measured by the browser
  * (includes HTTP overhead, so higher than ICMP ping). Failed requests are

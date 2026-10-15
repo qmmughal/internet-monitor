@@ -330,7 +330,7 @@ def render_monitor(entries: List[dict]):
     lines.append(f"[dim]Last sample {e['timestamp']} · source {safe(e['source'])} · Ctrl+C to stop[/dim]")
     text = "\n".join(lines)
     if _console is not None:
-        return Panel(text, title="[bold cyan]📡 WiFi Monitor[/bold cyan]", border_style="cyan")
+        return Panel(text, title="[bold cyan]📡 Internet Monitor[/bold cyan]", border_style="cyan")
     return text
 
 
@@ -393,27 +393,27 @@ def build_parser() -> argparse.ArgumentParser:
     common.add_argument("--demo", action="store_true", help="use SIMULATED data (clearly labelled) instead of the OS")
 
     parser = argparse.ArgumentParser(
-        prog="wifi-monitor",
-        description="WiFi Monitor — local Wi-Fi monitoring and connectivity diagnostics",
+        prog="internet-monitor",
+        description="Internet Monitor — local internet monitoring: any connection, per-app usage, Wi-Fi and diagnostics",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""examples:
-  wifi-monitor status              current Wi-Fi link, gateway and local IP
-  wifi-monitor scan                nearby access points (from the OS scan list)
-  wifi-monitor diagnose            step-by-step internet troubleshooter
-  wifi-monitor monitor -o log.csv  live signal monitor, saved to CSV
-  wifi-monitor serve               dashboard + local API on http://127.0.0.1:8765
-  wifi-monitor capabilities        what this platform can measure
-  wifi-monitor speedtest           download/upload throughput (uses data)
-  wifi-monitor channels            channel congestion and recommendation
-  wifi-monitor devices             devices on your network (passive)
-  wifi-monitor ask "why is my wifi slow?"   plain-language explanation
-  wifi-monitor history / alerts    from a running `serve`
+  internet-monitor status              current Wi-Fi link, gateway and local IP
+  internet-monitor scan                nearby access points (from the OS scan list)
+  internet-monitor diagnose            step-by-step internet troubleshooter
+  internet-monitor monitor -o log.csv  live signal monitor, saved to CSV
+  internet-monitor serve               dashboard + local API on http://127.0.0.1:8765
+  internet-monitor capabilities        what this platform can measure
+  internet-monitor speedtest           download/upload throughput (uses data)
+  internet-monitor channels            channel congestion and recommendation
+  internet-monitor devices             devices on your network (passive)
+  internet-monitor ask "why is my wifi slow?"   plain-language explanation
+  internet-monitor history / alerts    from a running `serve`
 
 legacy flags (v1.0): --scan, --signal, --export csv|json
 
 exit codes: 0 ok · 1 problem found · 2 usage error · 3 data unavailable""",
     )
-    parser.add_argument("--version", action="version", version=f"wifi-monitor {__version__}")
+    parser.add_argument("--version", action="version", version=f"internet-monitor {__version__}")
     parser.add_argument("--scan", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--signal", action="store_true", help=argparse.SUPPRESS)
     parser.add_argument("--export", choices=["csv", "json"], dest="legacy_export", help=argparse.SUPPRESS)

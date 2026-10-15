@@ -1,11 +1,11 @@
 import fixtures as fx
 import pytest
 
-from wifi_monitor import netinfo, probes
-from wifi_monitor.models import ESTIMATED, LIVE, Measurement
-from wifi_monitor.providers import get_provider
-from wifi_monitor.providers import linux, macos, windows
-from wifi_monitor.runner import CommandResult
+from internet_monitor import netinfo, probes
+from internet_monitor.models import ESTIMATED, LIVE, Measurement
+from internet_monitor.providers import get_provider
+from internet_monitor.providers import linux, macos, windows
+from internet_monitor.runner import CommandResult
 
 
 def fake_runner(mapping):

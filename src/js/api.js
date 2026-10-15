@@ -1,13 +1,13 @@
 /**
- * api.js — Data source selection for WiFi Monitor
+ * api.js — Data source selection for Internet Monitor
  *
  * The browser cannot read Wi-Fi hardware. Real measurements come from the
- * local API started with `wifi-monitor serve`. Without it the dashboard runs
+ * local API started with `internet-monitor serve`. Without it the dashboard runs
  * in browser demo mode, where every value is simulated and labelled as such.
  *
  * Modes:
- *   'live'        – served by `wifi-monitor serve` (real OS data)
- *   'server-demo' – served by `wifi-monitor serve --demo` (simulated by the server)
+ *   'live'        – served by `internet-monitor serve` (real OS data)
+ *   'server-demo' – served by `internet-monitor serve --demo` (simulated by the server)
  *   'browser-demo'– no API reachable (simulated in the browser)
  */
 
@@ -25,7 +25,7 @@ const DataSource = (() => {
         method,
         cache: 'no-store',
         signal: ctrl.signal,
-        headers: method === 'POST' ? { 'X-WiFi-Monitor': '1' } : {},
+        headers: method === 'POST' ? { 'X-Internet-Monitor': '1' } : {},
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {

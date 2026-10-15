@@ -17,25 +17,25 @@ Platform tools (normally pre-installed):
 ## Install
 
 ```bash
-git clone https://github.com/qmmughal/wifi-monitor.git
-cd wifi-monitor
+git clone https://github.com/qmmughal/internet-monitor.git
+cd internet-monitor
 python -m venv .venv
 # Windows:  .venv\Scripts\activate
 # Linux/macOS: source .venv/bin/activate
 pip install ".[rich]"
-wifi-monitor --version
+internet-monitor --version
 ```
 
-Without installing, every command also works as `python cli/wifi-monitor.py <command>` or
-`python -m wifi_monitor <command>` from the repository root.
+Without installing, every command also works as `python cli/internet-monitor.py <command>` or
+`python -m internet_monitor <command>` from the repository root.
 
 ## First run
 
 ```bash
-wifi-monitor capabilities   # what your platform can report
-wifi-monitor status         # current link
-wifi-monitor diagnose       # troubleshooter
-wifi-monitor serve          # dashboard at http://127.0.0.1:8765
+internet-monitor capabilities   # what your platform can report
+internet-monitor status         # current link
+internet-monitor diagnose       # troubleshooter
+internet-monitor serve          # dashboard at http://127.0.0.1:8765
 ```
 
 If `status` reports *unavailable*, the message and hint explain why — see
@@ -55,12 +55,12 @@ sudo apt install network-manager iw   # Debian/Ubuntu, if missing
 ## Dashboard only (demo)
 
 Opening `src/index.html` directly, or `npm run start:demo`, shows the dashboard with simulated
-data. Use `wifi-monitor serve` for real measurements.
+data. Use `internet-monitor serve` for real measurements.
 
 ## Uninstall
 
 ```bash
-pip uninstall wifi-monitor
+pip uninstall internet-monitor
 ```
 
 The CLI stores nothing unless you pass `-o FILE`. The dashboard's history lives in your

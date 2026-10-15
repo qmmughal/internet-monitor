@@ -1,7 +1,7 @@
 {
-  "name": "wifi-monitor",
+  "name": "internet-monitor",
   "version": "1.3.0-dev",
-  "description": "Local-first Wi-Fi monitoring and connectivity diagnostics: dashboard, CLI and read-only local API",
+  "description": "Local-first internet monitoring: any connection type, per-app usage, Wi-Fi details and diagnostics",
   "main": "src/index.html",
   "keywords": [
     "wifi",
@@ -14,18 +14,18 @@
     "security",
     "speed-test"
   ],
-  "author": "WiFi Monitor Contributors",
+  "author": "Internet Monitor Contributors",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/qmmughal/wifi-monitor.git"
+    "url": "https://github.com/qmmughal/internet-monitor.git"
   },
   "bugs": {
-    "url": "https://github.com/qmmughal/wifi-monitor/issues"
+    "url": "https://github.com/qmmughal/internet-monitor/issues"
   },
-  "homepage": "https://github.com/qmmughal/wifi-monitor#readme",
+  "homepage": "https://github.com/qmmughal/internet-monitor#readme",
   "scripts": {
-    "start": "python -m wifi_monitor serve",
+    "start": "python -m internet_monitor serve",
     "start:demo": "npx serve src -p 3000",
     "test": "node tests/unit.test.js",
     "test:py": "python -m pytest -q",

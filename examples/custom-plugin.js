@@ -1,7 +1,7 @@
 /**
- * custom-plugin.js — Example: Adding a custom WiFi Monitor plugin
+ * custom-plugin.js — Example: Adding a custom Internet Monitor plugin
  * 
- * This example shows how to extend WiFi Monitor with a custom
+ * This example shows how to extend Internet Monitor with a custom
  * module that adds a "packet loss" metric to the dashboard.
  */
 

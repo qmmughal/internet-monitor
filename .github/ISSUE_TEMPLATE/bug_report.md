@@ -1,6 +1,6 @@
 ---
 name: 🐛 Bug Report
-about: Report a bug to help us improve WiFi Monitor
+about: Report a bug to help us improve Internet Monitor
 title: "[BUG] "
 labels: ["bug", "needs-triage"]
 assignees: []
@@ -28,7 +28,7 @@ What actually happened. Include screenshots if applicable.
 
 - **OS**: [e.g. Windows 11, macOS 14, Ubuntu 22.04]
 - **Browser**: [e.g. Chrome 120, Firefox 121, Safari 17]
-- **WiFi Monitor Version**: [e.g. v1.0.0 or commit hash]
+- **Internet Monitor Version**: [e.g. v1.0.0 or commit hash]
 
 ## 📷 Screenshots / Recordings
 

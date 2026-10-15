@@ -1,7 +1,7 @@
-from wifi_monitor import devices
-from wifi_monitor.models import ProviderResult, WifiInterface
-from wifi_monitor.probes import LatencySample
-from wifi_monitor.runner import CommandResult
+from internet_monitor import devices
+from internet_monitor.models import ProviderResult, WifiInterface
+from internet_monitor.probes import LatencySample
+from internet_monitor.runner import CommandResult
 
 ARP_WIN = """
 Interface: 192.168.1.10 --- 0xb

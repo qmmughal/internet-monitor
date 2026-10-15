@@ -5,11 +5,11 @@ from http.server import ThreadingHTTPServer
 
 import pytest
 
-from wifi_monitor import server
-from wifi_monitor.diagnostics import Report
-from wifi_monitor.models import ProviderResult
-from wifi_monitor.providers import DemoProvider
-from wifi_monitor.providers.base import WifiProvider
+from internet_monitor import server
+from internet_monitor.diagnostics import Report
+from internet_monitor.models import ProviderResult
+from internet_monitor.providers import DemoProvider
+from internet_monitor.providers.base import WifiProvider
 
 
 class NoWifi(WifiProvider):

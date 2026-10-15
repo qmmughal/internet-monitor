@@ -241,11 +241,11 @@ def read_body(handler, max_body: int):
 
 def make_hub_handler(state: HubState):
     class Handler(BaseHTTPRequestHandler):
-        server_version = f"wifi-monitor-hub/{__version__}"
+        server_version = f"internet-monitor-hub/{__version__}"
         sys_version = ""
 
         def log_message(self, fmt, *args):
-            if os.environ.get("WIFI_MONITOR_HTTP_LOG"):
+            if config.env("HTTP_LOG"):
                 super().log_message(fmt, *args)  # never includes the Authorization header
 
         def _token(self) -> Optional[str]:
@@ -308,7 +308,7 @@ def serve_hub(host: str, port: int, tls_cert: Optional[str] = None, tls_key: Opt
         return 2
     state = HubState()
     if not state.tokens.list()["viewers"]:
-        print("Note: no viewer tokens yet. Create one with: wifi-monitor hub token add viewers <name>")
+        print("Note: no viewer tokens yet. Create one with: internet-monitor hub token add viewers <name>")
     httpd = ThreadingHTTPServer((host, port), make_hub_handler(state))
     httpd.daemon_threads = True
     scheme = "http"
@@ -318,7 +318,7 @@ def serve_hub(host: str, port: int, tls_cert: Optional[str] = None, tls_key: Opt
         ctx.load_cert_chain(tls_cert, tls_key)
         httpd.socket = ctx.wrap_socket(httpd.socket, server_side=True)
         scheme = "https"
-    print(f"WiFi Monitor hub {__version__} on {scheme}://{host}:{port}/  (Ctrl+C to stop)")
+    print(f"Internet Monitor hub {__version__} on {scheme}://{host}:{port}/  (Ctrl+C to stop)")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:

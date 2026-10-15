@@ -2,7 +2,7 @@
 
 Security model
 * Binds to 127.0.0.1 by default. A non-loopback bind needs ``--allow-remote``
-  because the API is unauthenticated (use ``wifi-monitor hub`` for
+  because the API is unauthenticated (use ``internet-monitor hub`` for
   authenticated multi-machine monitoring).
 * The Host header must name a loopback address (blocks DNS-rebinding attacks
   from web pages the user visits).
@@ -38,7 +38,7 @@ from .models import SIMULATED, ProviderResult, utc_now
 from .providers import get_provider
 
 STATIC_ROOT = Path(__file__).resolve().parent.parent / "src"
-API_HEADER = "X-WiFi-Monitor"
+API_HEADER = "X-Internet-Monitor"
 MAX_POST_BODY = 16 * 1024
 CSP = (
     "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; "
@@ -416,11 +416,11 @@ def make_handler(app: App, allow_remote: bool, static_root: Path = STATIC_ROOT):
     root = static_root.resolve()
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = f"wifi-monitor/{__version__}"
+        server_version = f"internet-monitor/{__version__}"
         sys_version = ""
 
         def log_message(self, fmt, *args):  # quieter, and never logs query strings
-            if os.environ.get("WIFI_MONITOR_HTTP_LOG"):
+            if config.env("HTTP_LOG"):
                 super().log_message(fmt, *args)
 
         def _host_ok(self) -> bool:
@@ -540,7 +540,7 @@ def serve(host: str = "127.0.0.1", port: int = 8765, demo: bool = False, allow_r
     httpd = ThreadingHTTPServer((host, port), make_handler(app, allow_remote))
     httpd.daemon_threads = True
     shown = f"[{host}]" if ":" in host else host
-    print(f"WiFi Monitor {__version__} — dashboard and API on http://{shown}:{port}/")
+    print(f"Internet Monitor {__version__} — dashboard and API on http://{shown}:{port}/")
     print("Mode: SIMULATED demo data" if demo else f"Mode: live ({app.provider.name})")
     if collector:
         print(f"History: sampling every {collector.interval_s:g} s, kept in memory only (lost on exit)")

@@ -1,6 +1,6 @@
-# Contributing to WiFi Monitor
+# Contributing to Internet Monitor
 
-Thank you for investing your time in contributing to WiFi Monitor! 🎉
+Thank you for investing your time in contributing to Internet Monitor! 🎉
 
 This document outlines the contribution process, coding standards, and community guidelines.
 
@@ -26,7 +26,7 @@ This project follows our [Code of Conduct](CODE_OF_CONDUCT.md). By participating
 ## Getting Started
 
 1. **Fork** the repository on GitHub
-2. **Clone** your fork: `git clone https://github.com/YOUR_USERNAME/wifi-monitor.git`
+2. **Clone** your fork: `git clone https://github.com/YOUR_USERNAME/internet-monitor.git`
 3. **Create a branch**: `git checkout -b type/short-description`
 4. **Make changes**, then commit with a conventional commit message
 5. **Push** and open a Pull Request
@@ -74,9 +74,9 @@ pip install -e ".[dev]"
 ### Running
 
 ```bash
-wifi-monitor serve               # dashboard with real data: http://127.0.0.1:8765
-wifi-monitor serve --demo        # dashboard with labelled simulated data
-wifi-monitor diagnose            # troubleshooter
+internet-monitor serve               # dashboard with real data: http://127.0.0.1:8765
+internet-monitor serve --demo        # dashboard with labelled simulated data
+internet-monitor diagnose            # troubleshooter
 ```
 
 ### Running Tests
@@ -219,7 +219,7 @@ perf(logger): debounce localStorage writes
 ## Issue Reporting
 
 ### Before opening an issue:
-- Search existing [issues](https://github.com/qmmughal/wifi-monitor/issues)
+- Search existing [issues](https://github.com/qmmughal/internet-monitor/issues)
 - Check the [FAQ](docs/FAQ.md)
 - Try the latest `main` branch
 
@@ -230,4 +230,4 @@ Please do **not** open a public issue for security vulnerabilities. Follow the [
 
 ## Recognition
 
-All contributors are recognized in our [CHANGELOG.md](CHANGELOG.md) and on the GitHub contributors page. Thank you for making WiFi Monitor better! 🙏
+All contributors are recognized in our [CHANGELOG.md](CHANGELOG.md) and on the GitHub contributors page. Thank you for making Internet Monitor better! 🙏

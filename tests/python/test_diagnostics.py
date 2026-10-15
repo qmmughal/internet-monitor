@@ -1,8 +1,8 @@
 """Diagnostics engine scenarios with fake probes (no network access)."""
 
-from wifi_monitor.diagnostics import DiagnosticsConfig, Probes, run_diagnostics
-from wifi_monitor.models import ESTIMATED, Measurement, ProviderResult, WifiInterface
-from wifi_monitor.probes import LatencySample
+from internet_monitor.diagnostics import DiagnosticsConfig, Probes, run_diagnostics
+from internet_monitor.models import ESTIMATED, Measurement, ProviderResult, WifiInterface
+from internet_monitor.probes import LatencySample
 
 CFG = DiagnosticsConfig(dns_hosts=("a.test", "b.test"),
                         https_endpoints=(("https://a.test/generate_204", 204), ("https://b.test/", None)),

@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to WiFi Monitor are documented in this file.
+All notable changes to Internet Monitor are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ---
 
 ## [Unreleased] — 1.3.0
+
+**Renamed from WiFi Monitor to Internet Monitor.** The command is now `internet-monitor` and the Python
+package `internet_monitor`. `wifi-monitor`, `cli/wifi-monitor.py`, `WIFI_MONITOR_*` environment variables
+and an existing `wifi-monitor` config folder keep working. Prometheus metrics are now `internet_monitor_*`,
+the API header is `X-Internet-Monitor` and MQTT topics default to `internet_monitor/…`.
 
 Focus: monitor internet of any kind, and show which apps use it.
 
@@ -61,15 +66,15 @@ Focus: trustworthy measurements. Every value now carries its provenance
 (`live` / `estimated` / `simulated` / `unavailable`) and nothing is fabricated.
 
 ### Added
-- `wifi_monitor` Python package (standard library only; Rich optional) with per-OS providers:
+- `internet_monitor` Python package (standard library only; Rich optional) with per-OS providers:
   Windows `netsh` (multi-interface, `Rssi`, Location-permission and locale detection),
   Linux `nmcli` + `iw`, macOS `system_profiler` (replaces the removed `airport`).
-- Connectivity troubleshooter (`wifi-monitor diagnose`): link → router (ICMP + TCP fallback)
+- Connectivity troubleshooter (`internet-monitor diagnose`): link → router (ICMP + TCP fallback)
   → DNS → HTTPS (captive-portal detection) → TCP latency/jitter, with findings that state
   evidence, likely cause, next step and confidence.
 - CLI subcommands `status`, `scan`, `diagnose`, `monitor`, `capabilities`, `serve`;
   `--json` output, `--demo` mode, exit codes. v1.0 flags still work.
-- `wifi-monitor serve`: loopback-only dashboard server and read-only `/api/v1` API
+- `internet-monitor serve`: loopback-only dashboard server and read-only `/api/v1` API
   (DNS-rebinding protection, no CORS, CSP, path-traversal protection).
 - Dashboard: live data via the local API, demo-mode banner, Connectivity Check card,
   provenance column in history and exports, crowded-channel alert (AP count).
@@ -129,5 +134,5 @@ Focus: trustworthy measurements. Every value now carries its provenance
 
 ---
 
-[Unreleased]: https://github.com/qmmughal/wifi-monitor/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/qmmughal/wifi-monitor/releases/tag/v1.0.0
+[Unreleased]: https://github.com/qmmughal/internet-monitor/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/qmmughal/internet-monitor/releases/tag/v1.0.0

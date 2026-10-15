@@ -1,6 +1,6 @@
 """Optional MQTT publishing with Home Assistant discovery.
 
-Requires ``pip install "wifi-monitor[mqtt]"`` (paho-mqtt). Publishes a JSON
+Requires ``pip install "internet-monitor[mqtt]"`` (paho-mqtt). Publishes a JSON
 state message per sample to ``<prefix>/<node>/state`` and, if enabled,
 retained Home Assistant discovery configs so the sensors appear automatically.
 SSIDs/BSSIDs are not published. The password comes from an environment variable.
@@ -29,8 +29,8 @@ SENSORS = [
 
 
 def node_id(name: Optional[str] = None) -> str:
-    raw = name or socket.gethostname() or "wifi-monitor"
-    return re.sub(r"[^a-z0-9_-]", "_", raw.lower())[:40] or "wifi_monitor"
+    raw = name or socket.gethostname() or "internet-monitor"
+    return re.sub(r"[^a-z0-9_-]", "_", raw.lower())[:40] or "internet_monitor"
 
 
 def state_payload(s: Sample) -> dict:
@@ -42,16 +42,16 @@ def discovery_messages(prefix: str, node: str):
     """(topic, payload) pairs for Home Assistant MQTT discovery."""
     state_topic = f"{prefix}/{node}/state"
     avail = f"{prefix}/{node}/availability"
-    device = {"identifiers": [f"wifi_monitor_{node}"], "name": f"WiFi Monitor ({node})", "manufacturer": "WiFi Monitor"}
+    device = {"identifiers": [f"internet_monitor_{node}"], "name": f"Internet Monitor ({node})", "manufacturer": "Internet Monitor"}
     for key, name, unit, dclass, sclass in SENSORS:
-        cfg = {"name": name, "unique_id": f"wifi_monitor_{node}_{key}", "state_topic": state_topic,
+        cfg = {"name": name, "unique_id": f"internet_monitor_{node}_{key}", "state_topic": state_topic,
                "value_template": f"{{{{ value_json.{key} }}}}", "unit_of_measurement": unit,
                "state_class": sclass, "availability_topic": avail, "device": device}
         if dclass:
             cfg["device_class"] = dclass
-        yield f"homeassistant/sensor/wifi_monitor_{node}/{key}/config", cfg
-    yield (f"homeassistant/binary_sensor/wifi_monitor_{node}/connected/config",
-           {"name": "Wi-Fi connected", "unique_id": f"wifi_monitor_{node}_connected", "state_topic": state_topic,
+        yield f"homeassistant/sensor/internet_monitor_{node}/{key}/config", cfg
+    yield (f"homeassistant/binary_sensor/internet_monitor_{node}/connected/config",
+           {"name": "Wi-Fi connected", "unique_id": f"internet_monitor_{node}_connected", "state_topic": state_topic,
             "value_template": "{{ 'ON' if value_json.connected else 'OFF' }}", "device_class": "connectivity",
             "availability_topic": avail, "device": device})
 
@@ -62,7 +62,7 @@ class MqttPublisher:
             raise ValueError("mqtt.host is not configured in config.json")
         self.cfg = cfg
         self.node = node_id(node)
-        self.prefix = re.sub(r"[^A-Za-z0-9_/-]", "_", cfg.get("topic_prefix") or "wifi_monitor").strip("/")
+        self.prefix = re.sub(r"[^A-Za-z0-9_/-]", "_", cfg.get("topic_prefix") or "internet_monitor").strip("/")
         self.avail = f"{self.prefix}/{self.node}/availability"
         self.client = client or self._make_client()
 
@@ -70,13 +70,15 @@ class MqttPublisher:
         try:
             import paho.mqtt.client as mqtt
         except ImportError as exc:
-            raise RuntimeError('MQTT needs paho-mqtt: pip install "wifi-monitor[mqtt]"') from exc
+            raise RuntimeError('MQTT needs paho-mqtt: pip install "internet-monitor[mqtt]"') from exc
         if hasattr(mqtt, "CallbackAPIVersion"):
-            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"wifi-monitor-{self.node}")
+            client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"internet-monitor-{self.node}")
         else:  # paho-mqtt 1.x
-            client = mqtt.Client(client_id=f"wifi-monitor-{self.node}")
+            client = mqtt.Client(client_id=f"internet-monitor-{self.node}")
         if self.cfg.get("username"):
-            client.username_pw_set(self.cfg["username"], os.environ.get(self.cfg.get("password_env") or "", None))
+            from .config import env_var
+
+            client.username_pw_set(self.cfg["username"], env_var(self.cfg.get("password_env")))
         if self.cfg.get("tls"):
             client.tls_set()
         client.will_set(self.avail, "offline", retain=True)

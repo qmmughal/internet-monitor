@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from wifi_monitor import cli
-from wifi_monitor.models import ProviderResult
-from wifi_monitor.providers.base import WifiProvider
+from internet_monitor import cli
+from internet_monitor.models import ProviderResult
+from internet_monitor.providers.base import WifiProvider
 
 
 class NoWifi(WifiProvider):

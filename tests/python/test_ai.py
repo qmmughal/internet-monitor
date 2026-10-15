@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from wifi_monitor import ai
+from internet_monitor import ai
 
 GOOD = {
     "summary": "Your router link is fine; DNS is slow.",

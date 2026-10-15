@@ -35,7 +35,7 @@ def _mbps(nbytes: int, seconds: float) -> Optional[float]:
 
 def download(nbytes: int, timeout_s: float = 15.0, deadline_s: float = 12.0, opener=None,
              on_progress: Optional[Callable[[float], None]] = None) -> dict:
-    req = urllib.request.Request(DOWN_URL.format(n=int(nbytes)), headers={"User-Agent": "wifi-monitor-speedtest"})
+    req = urllib.request.Request(DOWN_URL.format(n=int(nbytes)), headers={"User-Agent": "internet-monitor-speedtest"})
     got, start, first_byte = 0, time.perf_counter(), None
     try:
         with (opener or _opener()).open(req, timeout=timeout_s) as resp:
@@ -61,7 +61,7 @@ def download(nbytes: int, timeout_s: float = 15.0, deadline_s: float = 12.0, ope
 def upload(nbytes: int, timeout_s: float = 20.0, opener=None) -> dict:
     payload = b"\0" * int(nbytes)
     req = urllib.request.Request(UP_URL, data=payload, method="POST",
-                                 headers={"User-Agent": "wifi-monitor-speedtest",
+                                 headers={"User-Agent": "internet-monitor-speedtest",
                                           "Content-Type": "application/octet-stream"})
     start = time.perf_counter()
     try:

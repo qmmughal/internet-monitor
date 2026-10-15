@@ -1,29 +1,29 @@
 <p align="center">
-  <img src="src/assets/logo.svg" alt="WiFi Monitor Logo" width="80" />
+  <img src="src/assets/logo.svg" alt="Internet Monitor Logo" width="80" />
 </p>
 
-<h1 align="center">📡 WiFi Monitor</h1>
+<h1 align="center">📡 Internet Monitor</h1>
 
 <p align="center">
-  <strong>Local-first Wi-Fi monitoring and connectivity troubleshooting — with honest data.</strong>
+  <strong>Local-first internet monitoring — any connection, every app, Wi-Fi included — with honest data.</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/qmmughal/wifi-monitor/stargazers"><img src="https://img.shields.io/github/stars/qmmughal/wifi-monitor?style=flat-square&color=38bdf8" alt="Stars"/></a>
-  <a href="https://github.com/qmmughal/wifi-monitor/issues"><img src="https://img.shields.io/github/issues/qmmughal/wifi-monitor?style=flat-square&color=f59e0b" alt="Issues"/></a>
+  <a href="https://github.com/qmmughal/internet-monitor/stargazers"><img src="https://img.shields.io/github/stars/qmmughal/internet-monitor?style=flat-square&color=38bdf8" alt="Stars"/></a>
+  <a href="https://github.com/qmmughal/internet-monitor/issues"><img src="https://img.shields.io/github/issues/qmmughal/internet-monitor?style=flat-square&color=f59e0b" alt="Issues"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/></a>
 </p>
 
 ---
 
-WiFi Monitor watches your internet connection of any kind — Wi-Fi, Ethernet, VPN or mobile data —
+Internet Monitor watches your internet connection of any kind — Wi-Fi, Ethernet, VPN or mobile data —
 shows which apps are downloading and uploading, reads your Wi-Fi link from the operating system, runs a step-by-step
 connectivity check (link → router → DNS → HTTPS → latency), and explains what it finds
 with the evidence behind each conclusion. It runs on your machine; nothing is uploaded.
 
 **Every value says where it came from.** Measurements are tagged `live` (read from the OS),
 `estimated` (derived, e.g. dBm from Windows' signal %), `simulated` (demo mode only) or
-`unavailable` (with the reason). WiFi Monitor never fills a gap with made-up numbers.
+`unavailable` (with the reason). Internet Monitor never fills a gap with made-up numbers.
 
 ## ✨ What it does today
 
@@ -37,7 +37,7 @@ with the evidence behind each conclusion. It runs on your machine; nothing is up
 | Nearby access point list | ✅ From the OS scan list (see [capabilities](docs/CAPABILITIES.md)) |
 | Connectivity troubleshooter with findings, evidence, likely cause, next step, confidence | ✅ CLI and dashboard |
 | Default gateway and local IP | ✅ Windows, Linux, macOS |
-| Dashboard with live data via a local, loopback-only API | ✅ `wifi-monitor serve` |
+| Dashboard with live data via a local, loopback-only API | ✅ `internet-monitor serve` |
 | History with rolling stats, percentiles and baseline comparison (in memory, CSV/JSON export) | ✅ `serve`, `history` |
 | Explainable anomaly alerts: signal drop, sustained weak signal, latency spikes, slow DNS, packet loss, repeated disconnects | ✅ `serve`, `alerts` |
 | Roaming (BSSID change) and disconnect tracking | ✅ |
@@ -58,15 +58,15 @@ counters and per-app connections); [Rich](https://github.com/Textualize/rich) is
 No administrator rights are needed.
 
 ```bash
-git clone https://github.com/qmmughal/wifi-monitor.git
-cd wifi-monitor
-pip install ".[rich]"          # or just run python cli/wifi-monitor.py without installing
+git clone https://github.com/qmmughal/internet-monitor.git
+cd internet-monitor
+pip install ".[rich]"          # or just run python cli/internet-monitor.py without installing
 ```
 
 ### Troubleshoot your connection
 
 ```console
-$ wifi-monitor diagnose
+$ internet-monitor diagnose
 Running connectivity diagnostics…
 
 Overall: HEALTHY  (6916 ms)
@@ -85,7 +85,7 @@ suggested next step. Nothing on your system is ever changed.
 ### Open the dashboard with real data
 
 ```bash
-wifi-monitor serve            # http://127.0.0.1:8765
+internet-monitor serve            # http://127.0.0.1:8765
 ```
 
 Opening `src/index.html` directly (or via any static server) runs the dashboard in **demo mode**:
@@ -94,25 +94,25 @@ browsers cannot read Wi-Fi hardware, so all values are simulated and a banner sa
 ### All commands
 
 ```bash
-wifi-monitor status              # active connection (any type), Wi-Fi link, gateway and local IP
-wifi-monitor traffic -n 10       # live download/upload per interface
-wifi-monitor apps --window 1h    # which apps used the most data (or --live for right now)
-wifi-monitor connections         # which apps are connected to where, right now
-wifi-monitor scan                # nearby access points
-wifi-monitor diagnose            # connectivity troubleshooter
-wifi-monitor speedtest           # download/upload throughput (uses up to 50 MB)
-wifi-monitor channels            # channel congestion + recommendation
-wifi-monitor devices [--probe]   # devices on your network; --name MAC "TV" to label one
-wifi-monitor security            # security observations for this connection
-wifi-monitor survey add Kitchen  # record signal here; `survey report` lists weak spots
-wifi-monitor ask "why are my calls unstable?"   # plain-language explanation
-wifi-monitor monitor -o log.csv  # live signal monitor, saved to CSV (or .json)
-wifi-monitor capabilities        # what this platform can measure
+internet-monitor status              # active connection (any type), Wi-Fi link, gateway and local IP
+internet-monitor traffic -n 10       # live download/upload per interface
+internet-monitor apps --window 1h    # which apps used the most data (or --live for right now)
+internet-monitor connections         # which apps are connected to where, right now
+internet-monitor scan                # nearby access points
+internet-monitor diagnose            # connectivity troubleshooter
+internet-monitor speedtest           # download/upload throughput (uses up to 50 MB)
+internet-monitor channels            # channel congestion + recommendation
+internet-monitor devices [--probe]   # devices on your network; --name MAC "TV" to label one
+internet-monitor security            # security observations for this connection
+internet-monitor survey add Kitchen  # record signal here; `survey report` lists weak spots
+internet-monitor ask "why are my calls unstable?"   # plain-language explanation
+internet-monitor monitor -o log.csv  # live signal monitor, saved to CSV (or .json)
+internet-monitor capabilities        # what this platform can measure
 
-wifi-monitor serve [--demo] [--mqtt]   # dashboard + local API + background history
-wifi-monitor history | alerts          # read history/alerts from a running `serve`
-wifi-monitor hub serve | hub token …   # central hub for other machines
-wifi-monitor agent --hub https://…     # report this machine to a hub
+internet-monitor serve [--demo] [--mqtt]   # dashboard + local API + background history
+internet-monitor history | alerts          # read history/alerts from a running `serve`
+internet-monitor hub serve | hub token …   # central hub for other machines
+internet-monitor agent --hub https://…     # report this machine to a hub
 
 # --json for machine-readable output; --demo for clearly labelled simulated data
 ```
@@ -139,7 +139,7 @@ Full details: [docs/CAPABILITIES.md](docs/CAPABILITIES.md). Problems: [docs/TROU
   (`www.google.com`, `cp.cloudflare.com`, `www.microsoft.com`, `www.cloudflare.com`, `1.1.1.1`, `8.8.8.8`);
   `speedtest` transfers data with `speed.cloudflare.com`. The dashboard loads Chart.js and fonts from public CDNs.
 - **Off by default:** AI explanations (send a *redacted* summary to the provider you configure), the hub/agents and MQTT.
-- `wifi-monitor serve` binds to `127.0.0.1` only, rejects foreign `Host` headers (DNS rebinding), sends no CORS headers,
+- `internet-monitor serve` binds to `127.0.0.1` only, rejects foreign `Host` headers (DNS rebinding), sends no CORS headers,
   and requires a custom header on every POST. No request value ever reaches an OS command, and nothing changes your
   router, DNS, firewall or OS settings.
 
@@ -149,7 +149,7 @@ See [docs/PRIVACY.md](docs/PRIVACY.md), [docs/AI.md](docs/AI.md), [docs/DISTRIBU
 ## 🏗️ Architecture
 
 ```text
-wifi_monitor/            Python package (standard library only; rich/anthropic/paho-mqtt optional)
+internet_monitor/            Python package (standard library only; rich/anthropic/paho-mqtt optional)
   models.py              Measurement / provenance data model
   providers/             windows.py · linux.py · macos.py · demo.py
   netinfo.py, probes.py  gateway/local IP; bounded ping / TCP / DNS / HTTPS probes
@@ -164,7 +164,7 @@ wifi_monitor/            Python package (standard library only; rich/anthropic/p
   server.py              local dashboard server + /api/v1
 src/                     dashboard (vanilla JS, no build step)
   js/api.js, js/live.js  data-source detection and API-backed features
-cli/wifi-monitor.py      backwards-compatible entry point
+cli/internet-monitor.py      backwards-compatible entry point
 tests/python/            pytest suite with captured OS output fixtures
 tests/unit.test.js       dashboard tests (loads the shipped JS)
 ```
@@ -189,4 +189,4 @@ Completed work and remaining items are tracked in [docs/IMPLEMENTATION_PLAN.md](
 
 ## 📄 License
 
-MIT © 2025 WiFi Monitor Contributors. See [`LICENSE`](LICENSE).
+MIT © 2025 Internet Monitor Contributors. See [`LICENSE`](LICENSE).

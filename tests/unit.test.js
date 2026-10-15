@@ -1,5 +1,5 @@
 /**
- * unit.test.js — Unit tests for WiFi Monitor utility functions
+ * unit.test.js — Unit tests for Internet Monitor utility functions
  * 
  * Run with: node tests/unit.test.js
  * Or: npm test
@@ -86,7 +86,7 @@ function loadBrowserModules(files, names, extraGlobals = {}) {
    TEST SUITES
    ═══════════════════════════════════════════════════════════════ */
 
-console.log('\n📡 WiFi Monitor — Unit Tests\n');
+console.log('\n📡 Internet Monitor — Unit Tests\n');
 
 /* ── dbmToPercent ────────────────────────────────────────────── */
 console.log('SignalUtils.dbmToPercent');

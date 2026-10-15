@@ -1,5 +1,5 @@
 /**
- * live.js — Dashboard features backed by the local API (`wifi-monitor serve`)
+ * live.js — Dashboard features backed by the local API (`internet-monitor serve`)
  *
  * History, alerts, channel recommendations, device discovery, the throughput
  * test, the signal survey and plain-language explanations. In browser demo
@@ -22,7 +22,7 @@ const LiveFeatures = (() => {
       method: 'POST',
       cache: 'no-store',
       signal: ctrl.signal,
-      headers: { 'X-WiFi-Monitor': '1', 'Content-Type': 'application/json' },
+      headers: { 'X-Internet-Monitor': '1', 'Content-Type': 'application/json' },
       body: JSON.stringify(body || {}),
     }).then(async res => {
       const data = await res.json().catch(() => ({}));

@@ -1,5 +1,5 @@
 /**
- * utils.js — Shared utilities for WiFi Monitor
+ * utils.js — Shared utilities for Internet Monitor
  */
 
 'use strict';

@@ -24,7 +24,7 @@ SEV = {"ok": "green", "info": "cyan", "warning": "yellow", "critical": "red"}
 
 def api(url: str, path: str, method: str = "GET", body: Optional[dict] = None, raw: bool = False):
     data = json.dumps(body).encode() if body is not None else None
-    headers = {"X-WiFi-Monitor": "1"}
+    headers = {"X-Internet-Monitor": "1"}
     if data is not None:
         headers["Content-Type"] = "application/json"
     req = urllib.request.Request(url.rstrip("/") + path, data=data, method=method, headers=headers)
@@ -34,8 +34,8 @@ def api(url: str, path: str, method: str = "GET", body: Optional[dict] = None, r
 
 
 def _server_unreachable(url: str, exc: Exception) -> int:
-    out(f"[red]✗ Could not reach the WiFi Monitor server at {safe(url)}[/red] [dim]({safe(exc)})[/dim]")
-    out("  [yellow]→ History and alerts are collected by a running server. Start it with: wifi-monitor serve[/yellow]")
+    out(f"[red]✗ Could not reach the Internet Monitor server at {safe(url)}[/red] [dim]({safe(exc)})[/dim]")
+    out("  [yellow]→ History and alerts are collected by a running server. Start it with: internet-monitor serve[/yellow]")
     return EXIT_UNAVAILABLE
 
 
@@ -157,7 +157,7 @@ def cmd_devices(args) -> int:
         out(f"[dim]Sweep: {safe(result['sweep'])}[/dim]")
     for lim in result["limitations"]:
         out(f"[dim]· {safe(lim)}[/dim]")
-    out("[dim]Name a device: wifi-monitor devices --name <MAC> \"Living room TV\"[/dim]")
+    out("[dim]Name a device: internet-monitor devices --name <MAC> \"Living room TV\"[/dim]")
     return EXIT_OK
 
 
@@ -251,7 +251,7 @@ def cmd_speedtest(args) -> int:
 def cmd_survey(args) -> int:
     if args.action == "add":
         if not args.label:
-            out("[red]Give the location a name: wifi-monitor survey add \"Kitchen\"[/red]")
+            out("[red]Give the location a name: internet-monitor survey add \"Kitchen\"[/red]")
             return EXIT_USAGE
         provider = get_provider(demo=args.demo)
         demo_banner(args)
@@ -277,7 +277,7 @@ def cmd_survey(args) -> int:
         emit_json(rep)
         return EXIT_OK
     if not rep["points"]:
-        out("No survey points yet. Walk to a spot and run: wifi-monitor survey add \"Kitchen\"")
+        out("No survey points yet. Walk to a spot and run: internet-monitor survey add \"Kitchen\"")
         return EXIT_OK
     zone_style = {"ok": "green", "weak": "yellow", "dead": "red"}
     rows = [[safe(p["label"]), f"{p['median_dbm']} dBm", p["quality"],
@@ -372,7 +372,7 @@ def cmd_agent(args) -> int:
     from .history import History
     from . import hub
 
-    token = os.environ.get(args.token_env or "")
+    token = config.env_var(args.token_env)
     if not token:
         out(f"[red]Set the agent token in the environment variable {safe(args.token_env)}[/red]")
         return EXIT_USAGE
@@ -546,7 +546,7 @@ def cmd_connections(args) -> int:
 
 
 def register(sub, common) -> None:
-    url_help = f"URL of a running `wifi-monitor serve` (default {DEFAULT_URL})"
+    url_help = f"URL of a running `internet-monitor serve` (default {DEFAULT_URL})"
 
     tr = sub.add_parser("traffic", parents=[common], help="live upload/download per interface (Wi-Fi, Ethernet, VPN…)")
     tr.add_argument("-i", "--interval", type=float, default=1.0, help="seconds per reading (default 1)")
@@ -624,7 +624,7 @@ def register(sub, common) -> None:
 
     ag = sub.add_parser("agent", help="report measurements to a hub")
     ag.add_argument("--hub", required=True, help="hub URL, e.g. https://monitor.lan:8766")
-    ag.add_argument("--token-env", default="WIFI_MONITOR_AGENT_TOKEN", help="env var holding the agent token")
+    ag.add_argument("--token-env", default="INTERNET_MONITOR_AGENT_TOKEN", help="env var holding the agent token")
     ag.add_argument("--interval", type=float, default=60, help="seconds between reports (default 60)")
     ag.add_argument("--include-identifiers", action="store_true", help="also send SSID/BSSID")
     ag.add_argument("--ca-file", help="CA bundle for a hub with a private certificate")

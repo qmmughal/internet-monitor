@@ -1,4 +1,4 @@
-# WiFi Monitor — Architecture Guide
+# Internet Monitor — Architecture Guide
 
 ## Overview
 
@@ -30,7 +30,7 @@ Design rules:
 4. **Pure rules.** `diagnostics.classify()` has no I/O, so every rule is unit-tested with
    hand-built evidence.
 
-## Python package (`wifi_monitor/`)
+## Python package (`internet_monitor/`)
 
 | Module | Responsibility |
 |---|---|
@@ -74,7 +74,7 @@ Add the evidence collection to `run_diagnostics()` (with a timeout) and the rule
 `classify()`. Each rule must cite its evidence and state a confidence. Add a scenario test in
 `tests/python/test_diagnostics.py`.
 
-## Local API (`wifi-monitor serve`)
+## Local API (`internet-monitor serve`)
 
 | Method | Path | Returns |
 |---|---|---|
@@ -108,7 +108,7 @@ Add the evidence collection to `run_diagnostics()` (with a timeout) and the rule
 | POST | `/api/v1/ai/ask`, `/api/v1/ai/preview` `{question}` | Explanation / exact payload preview |
 | GET | `/metrics` | Prometheus |
 
-All POSTs need the header `X-WiFi-Monitor: 1`, a loopback or absent `Origin`, and (when a body is
+All POSTs need the header `X-Internet-Monitor: 1`, a loopback or absent `Origin`, and (when a body is
 sent) `Content-Type: application/json` with at most 16 KB. Every `ProviderResult` JSON object has
 `mode`, `source`, `is_simulated`, `timestamp`, `error`, `hint`, `data`. Security properties are
 listed in [SECURITY.md](../SECURITY.md).

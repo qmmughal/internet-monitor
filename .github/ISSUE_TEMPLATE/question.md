@@ -1,6 +1,6 @@
 ---
 name: ❓ Question / Help
-about: Ask a question or get help using WiFi Monitor
+about: Ask a question or get help using Internet Monitor
 title: "[Q] "
 labels: ["question"]
 assignees: []
@@ -23,7 +23,7 @@ What have you already tried or looked at?
 
 - **OS**: [e.g. Windows 11]
 - **Browser**: [e.g. Chrome 120]
-- **WiFi Monitor Version**: [e.g. v1.0.0]
+- **Internet Monitor Version**: [e.g. v1.0.0]
 
 ## 📝 Additional Context
 

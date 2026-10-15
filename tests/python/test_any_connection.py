@@ -5,14 +5,14 @@ import time
 
 import fixtures as fx
 
-from wifi_monitor import cli, commands, hub, server
-from wifi_monitor.diagnostics import DiagnosticsConfig, Finding, Probes, run_diagnostics, _activity_findings
-from wifi_monitor.history import History, Sample, detect_anomalies
-from wifi_monitor.config import DEFAULTS
-from wifi_monitor.models import ProviderResult
-from wifi_monitor.probes import LatencySample
-from wifi_monitor.providers import DemoProvider, windows
-from wifi_monitor.runner import CommandResult
+from internet_monitor import cli, commands, hub, server
+from internet_monitor.diagnostics import DiagnosticsConfig, Finding, Probes, run_diagnostics, _activity_findings
+from internet_monitor.history import History, Sample, detect_anomalies
+from internet_monitor.config import DEFAULTS
+from internet_monitor.models import ProviderResult
+from internet_monitor.probes import LatencySample
+from internet_monitor.providers import DemoProvider, windows
+from internet_monitor.runner import CommandResult
 
 BROKEN = [{"name": "Wi-Fi", "description": "Intel(R) Wi-Fi 6E AX211 160MHz", "status": "", "admin": "Up",
            "pnp_status": "Error", "problem": "CM_PROB_FAILED_POST_START"}]
@@ -168,7 +168,7 @@ def test_api_demo_never_simulates_apps():
 # ── CLI ─────────────────────────────────────────────────────────
 
 def test_cli_apps(monkeypatch, capsys):
-    import wifi_monitor.apps as apps_mod
+    import internet_monitor.apps as apps_mod
     monkeypatch.setattr(apps_mod, "usage", lambda w: {"mode": "live", "source": "t", "note": "n", "apps": [
         {"app": "Chrome", "bytes_received": 2_000_000, "bytes_sent": 1_000, "running": True}]})
     assert cli.main(["apps", "--window", "2h"]) == 0
@@ -177,7 +177,7 @@ def test_cli_apps(monkeypatch, capsys):
 
 
 def test_cli_connections_filter(monkeypatch, capsys):
-    import wifi_monitor.apps as apps_mod
+    import internet_monitor.apps as apps_mod
     monkeypatch.setattr(apps_mod, "connections", lambda: {"mode": "live", "note": "n", "apps": [
         {"app": "Google Chrome", "process": "chrome.exe", "pids": [1], "established": 1, "listening": [],
          "remotes": [{"ip": "1.2.3.4", "port": 443, "service": "https", "protocol": "tcp", "state": "ESTABLISHED",
@@ -191,3 +191,29 @@ def test_cli_connections_filter(monkeypatch, capsys):
 def test_window_parsing():
     assert commands._window_seconds("5m") == 300 and commands._window_seconds("2h") == 7200
     assert commands._window_seconds("1d") == 86400 and commands._window_seconds("90") == 90
+
+
+# ── rename compatibility (WiFi Monitor → Internet Monitor) ───────
+
+def test_env_prefers_new_name_and_falls_back(monkeypatch):
+    from internet_monitor import config
+    monkeypatch.delenv("INTERNET_MONITOR_AGENT_TOKEN", raising=False)
+    monkeypatch.setenv("WIFI_MONITOR_AGENT_TOKEN", "old")
+    assert config.env("AGENT_TOKEN") == "old"
+    assert config.env_var("INTERNET_MONITOR_AGENT_TOKEN") == "old"
+    monkeypatch.setenv("INTERNET_MONITOR_AGENT_TOKEN", "new")
+    assert config.env("AGENT_TOKEN") == "new" and config.env_var("INTERNET_MONITOR_AGENT_TOKEN") == "new"
+    assert config.env_var("SOME_OTHER_VAR_XYZ") is None and config.env_var(None) is None
+
+
+def test_legacy_config_folder_is_reused(monkeypatch, tmp_path):
+    from internet_monitor import config
+    monkeypatch.delenv("INTERNET_MONITOR_HOME", raising=False)
+    monkeypatch.delenv("WIFI_MONITOR_HOME", raising=False)
+    monkeypatch.setattr(config.sys, "platform", "linux")
+    monkeypatch.setattr(config.Path, "home", staticmethod(lambda: tmp_path))
+    assert config.home() == tmp_path / ".config" / "internet-monitor"
+    (tmp_path / ".config" / "wifi-monitor").mkdir(parents=True)
+    assert config.home() == tmp_path / ".config" / "wifi-monitor"
+    (tmp_path / ".config" / "internet-monitor").mkdir()
+    assert config.home() == tmp_path / ".config" / "internet-monitor"

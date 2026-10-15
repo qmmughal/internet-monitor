@@ -1,6 +1,6 @@
 # AI Explanations ("Wi-Fi copilot")
 
-`wifi-monitor ask "why are my video calls unstable?"` (and the **Explain** box on the dashboard)
+`internet-monitor ask "why are my video calls unstable?"` (and the **Explain** box on the dashboard)
 turns the measurements into a plain-language answer with observations, possible causes and
 suggested steps.
 
@@ -9,7 +9,7 @@ diagnostics. With it, a model reads a summary of your measurements and answers f
 
 ## What the model sees
 
-Run `wifi-monitor ask --preview "your question"` to print the exact text that would be sent.
+Run `internet-monitor ask --preview "your question"` to print the exact text that would be sent.
 It contains:
 
 - the latest diagnostics report (findings and evidence),
@@ -39,13 +39,13 @@ validated against a fixed schema and shown as text; suggestions are never applie
 
 ## Enabling
 
-Create `config.json` in the config directory (`%APPDATA%\wifi-monitor` on Windows,
-`~/.config/wifi-monitor` elsewhere, or `$WIFI_MONITOR_HOME`):
+Create `config.json` in the config directory (`%APPDATA%\internet-monitor` on Windows,
+`~/.config/internet-monitor` elsewhere, or `$INTERNET_MONITOR_HOME`):
 
 ### Claude (Anthropic)
 
 ```bash
-pip install "wifi-monitor[ai]"          # official anthropic SDK (Python 3.10+)
+pip install "internet-monitor[ai]"          # official anthropic SDK (Python 3.10+)
 export ANTHROPIC_API_KEY=...            # Windows: setx ANTHROPIC_API_KEY ...
 ```
 

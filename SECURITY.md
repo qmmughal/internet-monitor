@@ -12,14 +12,14 @@
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
 Report privately via
-[GitHub Security Advisories](https://github.com/qmmughal/wifi-monitor/security/advisories/new)
+[GitHub Security Advisories](https://github.com/qmmughal/internet-monitor/security/advisories/new)
 with the affected version, steps to reproduce, impact, and a suggested fix if you have one.
 We aim to acknowledge reports within a few days. This is a volunteer project, so no fixed
 response times are guaranteed. Reporters are credited unless they prefer otherwise.
 
 ## Scope and threat model
 
-WiFi Monitor consists of a Python CLI, a local HTTP server (`wifi-monitor serve`) and a
+Internet Monitor consists of a Python CLI, a local HTTP server (`internet-monitor serve`) and a
 browser dashboard. It reads Wi-Fi information through OS tools and never changes system,
 network, firewall, DNS or router settings.
 
@@ -32,7 +32,7 @@ Current protections:
   No API or CLI parameter is passed to a command; `ping` only accepts validated IP literals.
 - The dashboard escapes all dynamic HTML; the CLI escapes Rich markup and strips control
   characters from SSIDs. CSV exports neutralise spreadsheet formulas.
-- `wifi-monitor serve` binds to `127.0.0.1` by default and refuses other addresses unless
+- `internet-monitor serve` binds to `127.0.0.1` by default and refuses other addresses unless
   `--allow-remote` is given. It rejects non-loopback `Host` headers (DNS rebinding), sends no
   CORS headers, sets a Content-Security-Policy on the page, blocks path traversal, and only
   exposes read-only data. The single POST endpoint (run diagnostics) requires a custom header

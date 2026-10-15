@@ -1,4 +1,4 @@
-# Troubleshooting WiFi Monitor
+# Troubleshooting Internet Monitor
 
 ## "no Wi-Fi interface found on this computer"
 
@@ -26,7 +26,7 @@ attributed unless you run as root. "psutil is not installed" means run `pip inst
 
 ## "unrecognised netsh output" (Windows)
 
-`netsh` labels are translated on non-English Windows and WiFi Monitor only parses English
+`netsh` labels are translated on non-English Windows and Internet Monitor only parses English
 labels, so it reports the data as unavailable rather than guessing. Workarounds: use an
 English display language for your account, or contribute a sample of
 `netsh wlan show interfaces` from your locale (remove the SSID/MAC addresses first).
@@ -37,7 +37,7 @@ Start **WLAN AutoConfig** in `services.msc` (or `sc start wlansvc` from an admin
 
 ## "'nmcli' is not installed" (Linux)
 
-WiFi Monitor needs NetworkManager. Systems using `iwd`, `wpa_supplicant` alone or
+Internet Monitor needs NetworkManager. Systems using `iwd`, `wpa_supplicant` alone or
 `systemd-networkd` are not supported yet. Install `network-manager`, or open an issue.
 
 ## Signal is "estimated"
@@ -52,7 +52,7 @@ macOS hides SSIDs from apps without Location permission. Grant it to your termin
 
 ## Dashboard says "Demo mode"
 
-The page could not reach the local API. Start `wifi-monitor serve` and open the URL it
+The page could not reach the local API. Start `internet-monitor serve` and open the URL it
 prints (`http://127.0.0.1:8765`). Opening `index.html` from disk is always demo mode.
 
 ## Dashboard: "Local API unreachable"
@@ -74,15 +74,15 @@ not a problem.
 Each probe has a timeout (default 2 s; change with `--timeout`). A full run normally takes
 5–15 s and is bounded even when everything times out.
 
-## `history` / `alerts`: "Could not reach the WiFi Monitor server"
+## `history` / `alerts`: "Could not reach the Internet Monitor server"
 
-History and alerts are collected by a running `wifi-monitor serve`; start it first. They are kept
+History and alerts are collected by a running `internet-monitor serve`; start it first. They are kept
 in memory, so they start empty after each restart.
 
 ## Device list is short
 
 Without `--probe` only devices this computer has recently talked to appear (the OS neighbour
-table). `wifi-monitor devices --probe` pings the local /24 first — only on networks you own or are
+table). `internet-monitor devices --probe` pings the local /24 first — only on networks you own or are
 authorised to scan. Phones with private MAC addresses may appear as new after reconnecting.
 
 ## Vendor shows "—"
@@ -93,7 +93,7 @@ directory ([CONFIG.md](CONFIG.md)).
 ## Speed test results look low
 
 The test uses one connection to the nearest Cloudflare edge and the whole path (Wi-Fi, router,
-ISP). Pause other downloads, and try a larger budget: `wifi-monitor speedtest --max-mb 200`.
+ISP). Pause other downloads, and try a larger budget: `internet-monitor speedtest --max-mb 200`.
 
 ## `ask` says "AI is disabled" or "AI unavailable"
 
@@ -103,8 +103,8 @@ reason (missing key, provider unreachable, invalid answer) — the rule-based an
 ## Hub returns 401
 
 The token is missing, wrong, revoked, or of the wrong role (agent tokens can only report; viewer
-tokens can only read). Check `wifi-monitor hub token list`.
+tokens can only read). Check `internet-monitor hub token list`.
 
 ## MQTT: "MQTT disabled"
 
-`serve --mqtt` needs `pip install "wifi-monitor[mqtt]"` and `mqtt.host` in `config.json`.
+`serve --mqtt` needs `pip install "internet-monitor[mqtt]"` and `mqtt.host` in `config.json`.

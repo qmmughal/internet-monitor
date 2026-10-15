@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from wifi_monitor import runner
+from internet_monitor import runner
 
 
 def test_missing_tool():
