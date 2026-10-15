@@ -5,168 +5,157 @@
 <h1 align="center">📡 WiFi Monitor</h1>
 
 <p align="center">
-  <strong>Open-source real-time WiFi network analyzer, signal monitor, and device discovery dashboard</strong>
+  <strong>Local-first Wi-Fi monitoring and connectivity troubleshooting — with honest data.</strong>
 </p>
 
 <p align="center">
   <a href="https://github.com/qmmughal/wifi-monitor/stargazers"><img src="https://img.shields.io/github/stars/qmmughal/wifi-monitor?style=flat-square&color=38bdf8" alt="Stars"/></a>
-  <a href="https://github.com/qmmughal/wifi-monitor/network/members"><img src="https://img.shields.io/github/forks/qmmughal/wifi-monitor?style=flat-square&color=818cf8" alt="Forks"/></a>
   <a href="https://github.com/qmmughal/wifi-monitor/issues"><img src="https://img.shields.io/github/issues/qmmughal/wifi-monitor?style=flat-square&color=f59e0b" alt="Issues"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green?style=flat-square" alt="License"/></a>
-  <a href="https://github.com/qmmughal/wifi-monitor/pulls"><img src="https://img.shields.io/github/issues-pr/qmmughal/wifi-monitor?style=flat-square" alt="PRs"/></a>
-  <img src="https://img.shields.io/badge/PRs-welcome-brightgreen?style=flat-square" alt="PRs Welcome"/>
 </p>
 
 ---
 
-> **Runs entirely in the browser, no native WiFi hardware access.** Signal/scanner/device data uses `navigator.connection` and simulated data where the browser sandbox restricts real hardware access — see [Browser API Support](#-browser-api-support) below. For real hardware scanning, see [Extending to Native](#️-extending-to-nativeelectronnode).
+WiFi Monitor reads your Wi-Fi link from the operating system, runs a step-by-step
+connectivity check (link → router → DNS → HTTPS → latency), and explains what it finds
+with the evidence behind each conclusion. It runs on your machine; nothing is uploaded.
 
-## ✨ Features
+**Every value says where it came from.** Measurements are tagged `live` (read from the OS),
+`estimated` (derived, e.g. dBm from Windows' signal %), `simulated` (demo mode only) or
+`unavailable` (with the reason). WiFi Monitor never fills a gap with made-up numbers.
 
-| Feature | Description |
+## ✨ What it does today
+
+| Feature | Status |
 |---|---|
-| 📊 **Live Signal Dashboard** | Real-time RSSI/dBm meter with animated signal gauge |
-| 🔍 **Network Scanner** | Enumerate nearby APs: SSID, BSSID, band, channel, security |
-| 🖥️ **Device Discovery** | ARP-style scan with MAC vendor lookup |
-| ⚡ **Speed Test** | Download, upload, latency, and jitter measurement |
-| 📈 **Signal History** | Time-series chart with CSV/JSON export |
-| 🔔 **Smart Alerts** | Configurable rules: weak signal, new device, congestion, high latency |
-| 🌗 **Dark / Light Mode** | Toggleable theme with system preference detection |
-| 🔌 **Zero Cloud** | 100% local — no data leaves your machine |
-| 🖥️ **CLI Tool** | Python-based terminal monitor with rich output |
+| Connected Wi-Fi details: SSID, BSSID, signal, band/channel/frequency, radio, security, link rate | ✅ Windows (`netsh`), Linux (`nmcli` + `iw`); macOS implemented, not yet verified on hardware |
+| Nearby access point list | ✅ From the OS scan list (see [capabilities](docs/CAPABILITIES.md)) |
+| Connectivity troubleshooter with findings, evidence, likely cause, next step, confidence | ✅ CLI and dashboard |
+| Default gateway and local IP | ✅ Windows, Linux, macOS |
+| Dashboard with live data via a local, loopback-only API | ✅ `wifi-monitor serve` |
+| Live signal monitor with CSV/JSON export (includes provenance columns) | ✅ CLI and dashboard |
+| Alerts: weak signal, high latency, crowded channel (AP count) | ✅ Dashboard |
+| Browser latency/jitter test (HTTP round-trip) | ✅ Real measurement |
+| Download/upload throughput test | ⏳ Not implemented — shown only as *simulated* in demo mode |
+| Device discovery on the LAN | ⏳ Not implemented — demo mode shows *simulated* devices |
+| History database, anomaly detection, AI explanations, MCP server | 🗺️ [Roadmap](docs/IMPLEMENTATION_PLAN.md) |
 
-## 🚀 Quick Start
+## 🚀 Quick start
 
-### Option 1: Open directly (no build step)
+Requires **Python 3.9+**. No other dependencies are needed; [Rich](https://github.com/Textualize/rich) is optional for nicer terminal output.
 
 ```bash
 git clone https://github.com/qmmughal/wifi-monitor.git
 cd wifi-monitor
-# Open src/index.html in your browser
-open src/index.html       # macOS
-start src/index.html      # Windows
-xdg-open src/index.html   # Linux
+pip install ".[rich]"          # or just run python cli/wifi-monitor.py without installing
 ```
 
-### Option 2: Local dev server (recommended)
+### Troubleshoot your connection
+
+```console
+$ wifi-monitor diagnose
+Running connectivity diagnostics…
+
+Overall: HEALTHY  (6916 ms)
+
+OK       No connectivity problems detected  (confidence: high)
+           evidence: Router answered in 1.0 ms median with 0.0% loss.
+           evidence: 3/3 DNS lookups succeeded.
+           evidence: 3/3 HTTPS endpoints responded.
+           evidence: Best internet handshake latency 30.6 ms.
+```
+
+When something is wrong you get, for example, *"DNS resolution is failing — none of 3 hostnames
+resolved, but direct TCP connections to 1.1.1.1 succeeded, so the internet path works"* with a
+suggested next step. Nothing on your system is ever changed.
+
+### Open the dashboard with real data
 
 ```bash
-cd wifi-monitor
-npx serve src             # or: python3 -m http.server 8080 --directory src
-# Visit http://localhost:8080
+wifi-monitor serve            # http://127.0.0.1:8765
 ```
 
-### Option 3: Python CLI
+Opening `src/index.html` directly (or via any static server) runs the dashboard in **demo mode**:
+browsers cannot read Wi-Fi hardware, so all values are simulated and a banner says so.
+
+### All commands
 
 ```bash
-cd wifi-monitor/cli
-pip install rich
-python wifi-monitor.py
+wifi-monitor status              # current Wi-Fi link, gateway and local IP
+wifi-monitor scan                # nearby access points
+wifi-monitor diagnose            # connectivity troubleshooter
+wifi-monitor monitor -o log.csv  # live signal monitor, saved to CSV (or .json)
+wifi-monitor capabilities        # what this platform can measure
+wifi-monitor serve [--demo]      # dashboard + read-only local API
+
+# add --json to status/scan/diagnose/capabilities/monitor for machine-readable output
+# add --demo to status/scan/monitor/capabilities for clearly labelled simulated data
 ```
 
-## 📸 Screenshots
+Exit codes: `0` ok · `1` diagnostics found a problem · `2` usage error · `3` data unavailable on this system.
+The v1.0 flags (`--scan`, `--signal`, `--export csv|json`) still work.
 
-Screenshots coming soon — open `src/index.html` in a browser to see the live Dashboard, Network Scanner, Device Discovery, and Speed Test views in the meantime.
+## 🌐 Platform support
+
+| | Windows 10/11 | Linux (NetworkManager) | macOS 13+ |
+|---|---|---|---|
+| Signal (dBm) | live `Rssi` on newer builds, otherwise estimated from % | live with `iw`, otherwise estimated from % | live |
+| SSID / BSSID | ✅ / ✅ | ✅ / ✅ | needs Location permission / ❌ |
+| Access point list | ✅ (cached by Windows) | ✅ | ✅ (slow) |
+| Diagnostics | ✅ | ✅ | ✅ |
+| Notes | 24H2+ needs **Location** access; English `netsh` output only | — | not yet verified on hardware |
+
+Full details: [docs/CAPABILITIES.md](docs/CAPABILITIES.md). Problems: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+
+## 🔒 Privacy and security
+
+- Monitoring data stays on your machine. The dashboard keeps history only in your browser's `localStorage`.
+- **Network requests the tool makes:** `diagnose` (and the dashboard's Connectivity Check) contacts public test endpoints
+  (`www.google.com`, `cp.cloudflare.com`, `www.microsoft.com`, `1.1.1.1`, `8.8.8.8`). The browser latency test contacts
+  `www.cloudflare.com`. The dashboard page loads Chart.js and fonts from public CDNs.
+- `wifi-monitor serve` binds to `127.0.0.1` only, rejects foreign `Host` headers (DNS rebinding), sends no CORS headers,
+  and exposes read-only endpoints. No request parameter ever reaches an OS command.
+
+See [docs/PRIVACY.md](docs/PRIVACY.md) and [SECURITY.md](SECURITY.md).
 
 ## 🏗️ Architecture
 
-```
-wifi-monitor/
-├── src/                    # Web dashboard (HTML/CSS/JS)
-│   ├── index.html          # Main entry point
-│   ├── css/style.css       # Design system
-│   └── js/
-│       ├── app.js          # Application controller
-│       ├── scanner.js      # Network scanning engine
-│       ├── charts.js       # Chart.js visualizations
-│       ├── devices.js      # Device discovery
-│       ├── speedtest.js    # Speed measurement
-│       ├── logger.js       # History & alerts
-│       └── utils.js        # Shared utilities
-├── cli/
-│   └── wifi-monitor.py     # Python CLI monitor
-├── docs/                   # Developer documentation
-└── tests/                  # Unit tests
+```text
+wifi_monitor/            Python package (standard library only)
+  models.py              Measurement / provenance data model
+  providers/             windows.py · linux.py · macos.py · demo.py
+  netinfo.py             default gateway + local IP
+  probes.py              bounded ping / TCP / DNS / HTTPS probes
+  diagnostics.py         staged troubleshooter + explainable rules
+  cli.py                 command-line interface
+  server.py              local dashboard server + /api/v1 (read-only)
+src/                     dashboard (vanilla JS, no build step)
+  js/api.js              live-vs-demo data source detection
+cli/wifi-monitor.py      backwards-compatible entry point
+tests/python/            pytest suite with captured OS output fixtures
+tests/unit.test.js       dashboard tests (loads the shipped JS)
 ```
 
-## 🌐 Browser API Support
+More: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
-WiFi Monitor uses these web APIs where available and gracefully simulates data in environments where they are restricted:
-
-| API | Purpose | Notes |
-|---|---|---|
-| `navigator.connection` | Connection type & speed hint | Chrome/Edge |
-| `performance.now()` | Latency measurement | All modern browsers |
-| `fetch()` | Download/upload simulation | All modern browsers |
-| `localStorage` | History persistence | All modern browsers |
-| `Notification API` | Desktop alerts | Requires permission |
-
-## 🖥️ Extending to Native (Electron/Node)
-
-The simulation layer in `scanner.js` and `devices.js` is designed to be replaced with native system calls. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for integration guides with:
-
-- **Node.js**: `wireless-tools`, `node-wifi`
-- **Electron**: IPC bridge to native WiFi APIs
-- **Python backend**: FastAPI + `pywifi`/`scapy` REST API
-- **Rust**: `wlan-rs` crate (high performance)
-
-## 🤝 Contributing
-
-We love contributions! Please read [`CONTRIBUTING.md`](CONTRIBUTING.md) before opening a PR.
-
-**Good first issues** are labeled [`good first issue`](https://github.com/qmmughal/wifi-monitor/labels/good%20first%20issue).
-
-Quick contribution flow:
+## 🧪 Development
 
 ```bash
-# Fork & clone
-git clone https://github.com/YOUR_USERNAME/wifi-monitor.git
-cd wifi-monitor
-
-# Create a feature branch
-git checkout -b feature/my-awesome-feature
-
-# Make your changes, then commit
-git add .
-git commit -m "feat: add channel interference visualization"
-
-# Push and open a PR
-git push origin feature/my-awesome-feature
+python -m venv .venv && . .venv/bin/activate     # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+python -m pytest -q          # Python tests (no Wi-Fi hardware needed)
+npm test                     # dashboard tests (Node 18+, no npm install needed)
 ```
 
-## 🧪 Tests
-
-```bash
-# Run unit tests (Node.js required)
-node tests/unit.test.js
-
-# Or with npm
-npm test
-```
+Contributions are welcome — please read [CONTRIBUTING.md](CONTRIBUTING.md). Sample OS output for
+non-English locales or other hardware is especially useful for improving the parsers.
 
 ## 📋 Roadmap
 
-- [ ] Electron desktop app wrapper
-- [ ] Python FastAPI backend for native WiFi access
-- [ ] Historical trend analysis & anomaly detection
-- [ ] 2.4/5/6 GHz channel recommendation engine
-- [ ] Multi-AP roaming tracker
-- [ ] Network topology visualization
-- [ ] WebSocket live updates between tabs
-- [ ] i18n / localization support
+Completed work and next steps are tracked in [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md).
+Next up: persistent history with retention, explainable anomaly detection, then an optional
+read-only MCP server and AI explanations (off by default).
 
 ## 📄 License
 
-MIT © 2025 WiFi Monitor Contributors. See [`LICENSE`](LICENSE) for details.
-
-## ⭐ Support
-
-If this project helps you, please consider:
-- ⭐ **Starring** the repo
-- 🐛 **Reporting bugs** via [GitHub Issues](https://github.com/qmmughal/wifi-monitor/issues)
-- 💡 **Requesting features** via [GitHub Discussions](https://github.com/qmmughal/wifi-monitor/discussions)
-- 📢 **Sharing** with your developer community
-
----
-
-<p align="center">Built with ❤️ for the open-source developer community</p>
+MIT © 2025 WiFi Monitor Contributors. See [`LICENSE`](LICENSE).

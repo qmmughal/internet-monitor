@@ -2,161 +2,102 @@
 
 ## Overview
 
-WiFi Monitor follows a **zero-build, vanilla JS modular architecture**. The dashboard runs directly from `src/index.html` with no bundler required. Each module is a self-contained IIFE (Immediately Invoked Function Expression) that exposes a public API object.
-
-## Module Dependency Graph
-
-```
-app.js (main controller)
-├── utils.js          ← shared utilities (no deps)
-│   ├── SignalUtils   ← signal math helpers
-│   ├── Sim           ← simulation data generators
-│   ├── Toast         ← notification system
-│   └── EventBus      ← publish/subscribe
-├── charts.js         ← visualization layer
-│   └── depends on: Chart.js (CDN)
-├── scanner.js        ← network scanning engine
-│   └── depends on: SignalUtils, Sim, EventBus
-├── devices.js        ← device discovery
-│   └── depends on: Sim, EventBus
-├── speedtest.js      ← speed measurement
-│   └── depends on: Sim, ChartManager
-└── logger.js         ← history, alerts, export
-    └── depends on: SignalUtils, Toast, EventBus, ChartManager
+```text
+            ┌──────────────── OS tools (argument lists, timeouts) ────────────────┐
+            │ netsh · nmcli · iw · system_profiler · route · ping · /proc/net/route│
+            └──────────────────────────────┬──────────────────────────────────────┘
+                                           │ runner.run()
+                        ┌──────────────────▼──────────────────┐
+                        │ providers/ (one per OS) · netinfo   │  parse → models (with provenance)
+                        └───────┬─────────────────────┬───────┘
+                                │                     │
+               probes.py ───────┤                     │
+          (ping/TCP/DNS/HTTPS)  ▼                     ▼
+                        diagnostics.py          server.py ── /api/v1 (loopback, read-only)
+                         (evidence → rules)          │
+                                │                    ▼
+                             cli.py            src/ dashboard (api.js picks live vs demo)
 ```
 
-## Module API Reference
+Design rules:
 
-### `SignalUtils`
+1. **Collection is separate from presentation.** Providers return `ProviderResult` objects;
+   the CLI, the API and the diagnostics engine all consume the same objects.
+2. **Failures are data.** Providers and probes never raise for expected failures; they return
+   `mode="unavailable"` with `error` and, when actionable, `hint`.
+3. **No silent fallback.** Simulated data comes only from `DemoProvider` (`--demo`) or the
+   browser demo mode, and is labelled at every layer.
+4. **Pure rules.** `diagnostics.classify()` has no I/O, so every rule is unit-tested with
+   hand-built evidence.
 
-| Method | Signature | Returns |
-|--------|-----------|---------|
-| `dbmToPercent` | `(dbm: number) → number` | 0–100% quality |
-| `qualityLabel` | `(dbm: number) → string` | Excellent/Good/Fair/Poor |
-| `qualityClass` | `(dbm: number) → string` | CSS class suffix |
-| `qualityColor` | `(dbm: number) → string` | CSS color var value |
-| `channelToFreq` | `(ch: number) → string` | "2.412 GHz" |
-| `channelBand` | `(ch: number) → string` | "2.4 GHz" / "5 GHz" / "6 GHz" |
+## Python package (`wifi_monitor/`)
 
-### `NetworkScanner`
+| Module | Responsibility |
+|---|---|
+| `models.py` | `Measurement`, `WifiInterface`, `AccessPoint`, `ProviderResult`; modes `live`/`estimated`/`simulated`/`unavailable` |
+| `runner.py` | Runs OS commands: list args only, no shell, timeout, output cap, OEM code-page decoding on Windows |
+| `signal.py` | dBm↔%, channel↔frequency↔band (2.4/5/6 GHz) |
+| `providers/windows.py` | `netsh wlan` parsing; Location-permission, service and locale detection |
+| `providers/linux.py` | `nmcli` terse parsing (escaped colons), `iw dev <if> link` for live dBm |
+| `providers/macos.py` | `system_profiler -json`; legacy `airport -I` when present |
+| `providers/demo.py` | Simulated data, locally-administered MACs (`02:…`) |
+| `netinfo.py` | Default gateway + local IP |
+| `probes.py` | Bounded ICMP ping (IP literals only), TCP connect/latency, DNS with timeout, HTTPS without redirects |
+| `diagnostics.py` | `run_diagnostics()` collects evidence; `classify()` produces findings |
+| `cli.py` | Subcommands, `--json`, exit codes, optional Rich |
+| `server.py` | `ThreadingHTTPServer` serving `src/` and `/api/v1/*` |
 
-| Method | Signature | Returns |
-|--------|-----------|---------|
-| `scan` | `() → Promise<Network[]>` | List of nearby networks |
-| `getCurrentNetwork` | `() → Network` | Connected network object |
-| `getLiveSignal` | `() → number` | Simulated live RSSI |
-| `renderNetworkRow` | `(net: Network) → string` | HTML table row |
-| `renderChannelMap` | `(currentCh: number) → void` | Renders channel heatmap |
+### Adding a platform
 
-### `DeviceDiscovery`
+Subclass `providers.base.WifiProvider`, implement `interfaces()`, `access_points()` and
+`capabilities()`, keep parsing in pure functions, add fixtures to `tests/python/fixtures.py`,
+and register the class in `providers/__init__.py`.
 
-| Method | Signature | Returns |
-|--------|-----------|---------|
-| `discover` | `() → Promise<Device[]>` | List of discovered devices |
-| `renderDevices` | `(devices, filter?) → void` | Renders device grid |
-| `getDevices` | `() → Device[]` | Current device list |
+### Adding a diagnostic rule
 
-### `SpeedTest`
+Add the evidence collection to `run_diagnostics()` (with a timeout) and the rule to
+`classify()`. Each rule must cite its evidence and state a confidence. Add a scenario test in
+`tests/python/test_diagnostics.py`.
 
-| Method | Signature | Returns |
-|--------|-----------|---------|
-| `run` | `(callbacks) → Promise<Result>` | Speed test result |
-| `isRunning` | `() → boolean` | Test in progress |
-| `getResults` | `() → Result[]` | Historical results |
+## Local API (`wifi-monitor serve`)
 
-### `Logger`
+| Method | Path | Returns |
+|---|---|---|
+| GET | `/api/v1/status` | Wi-Fi interfaces + network (gateway, local IP) + version/mode |
+| GET | `/api/v1/wifi/interfaces` | `ProviderResult` with interfaces |
+| GET | `/api/v1/wifi/signal` | Signal `Measurement` of the connected interface |
+| GET | `/api/v1/wifi/access-points` | `ProviderResult` with access points (cached 10 s) |
+| GET | `/api/v1/network` | Gateway / local IP |
+| GET | `/api/v1/capabilities` | Static capability description |
+| GET | `/api/v1/diagnostics` | Last diagnostics report (404 if none) |
+| POST | `/api/v1/diagnostics` | Run diagnostics (needs header `X-WiFi-Monitor: 1`; one run at a time) |
 
-| Method | Signature | Returns |
-|--------|-----------|---------|
-| `logSignal` | `(net, signal) → Entry` | New history entry |
-| `checkAlerts` | `(signal, net, latency?) → void` | Triggers alerts |
-| `exportCSV` | `() → void` | Downloads CSV file |
-| `exportJSON` | `() → void` | Downloads JSON file |
-| `setRule` | `(key, enabled, threshold?) → void` | Configure alert rule |
+Every `ProviderResult` JSON object has `mode`, `source`, `is_simulated`, `timestamp`,
+`error`, `hint`, `data`. Security properties are listed in [SECURITY.md](../SECURITY.md).
 
-### `EventBus`
+## Dashboard (`src/`)
 
-| Event | Payload | Emitted By |
-|-------|---------|------------|
-| `newDevice` | `{ name, ip, mac }` | DeviceDiscovery |
-| `alert` | `AlertObject` | Logger |
+Vanilla JS, no build step, IIFE modules loaded in order:
 
----
+| File | Role |
+|---|---|
+| `utils.js` | `SignalUtils`, `escapeHTML`, CSV, toasts, demo random helpers |
+| `api.js` | `DataSource.detect()` → `live` / `server-demo` / `browser-demo` |
+| `charts.js` | Chart.js wrappers (null values render as gaps) |
+| `scanner.js` | `poll()` snapshot with provenance; access point scan; channel map |
+| `devices.js` | Simulated devices in demo modes; "not available" in live mode |
+| `speedtest.js` | Real browser HTTP latency/jitter; simulated throughput in demo modes only |
+| `logger.js` | History/alerts in `localStorage` (with `mode`), CSV/JSON export |
+| `app.js` | Controller: polling (no overlapping requests), rendering, diagnostics card |
 
-## Replacing Simulation with Native APIs
+All dynamic text is inserted with `textContent` or `escapeHTML()`; SSIDs are attacker-controlled.
 
-The browser simulation layer is designed to be swapped out with native data sources. 
+## Testing
 
-### Node.js / Electron
+- `tests/python/` — pytest; OS output fixtures (`fixtures.py`) cover Windows (incl. German
+  and Location-denied output), NetworkManager, `iw`, macOS JSON, routing tables and ping in
+  several locales. Diagnostics scenarios use fake probes. Server tests use a real socket.
+- `tests/unit.test.js` — loads the shipped `src/js` files (Node `vm`) and includes XSS
+  regression tests.
 
-```javascript
-// Replace scanner.js simulation with node-wifi
-const wifi = require('node-wifi');
-wifi.init({ iface: null });
-
-async function scan() {
-  return wifi.scan();
-}
-async function getCurrentNetwork() {
-  const connections = await wifi.getCurrentConnections();
-  return connections[0];
-}
-```
-
-### Python FastAPI Backend
-
-```python
-# backend.py
-import subprocess
-from fastapi import FastAPI
-
-app = FastAPI()
-
-@app.get("/api/signal")
-def get_signal():
-    # Linux
-    result = subprocess.run(
-        ["nmcli", "-t", "-f", "SIGNAL,ACTIVE", "dev", "wifi"],
-        capture_output=True, text=True
-    )
-    # Parse and return
-    return {"dbm": -65, "ssid": "MyNetwork"}
-```
-
-Then in `scanner.js`, replace `_generateNetworks()` with:
-```javascript
-const res = await fetch('http://localhost:8000/api/signal');
-return res.json();
-```
-
----
-
-## Design Decisions
-
-### No Build Step
-The dashboard uses native ES modules loaded via `<script>` tags. This ensures:
-- Zero toolchain complexity for contributors
-- Works offline with just a file open
-- No webpack/vite configuration maintenance
-
-### IIFE Module Pattern
-Each module uses an IIFE (not ES modules) for maximum browser compatibility without a bundler:
-
-```javascript
-const MyModule = (() => {
-  // private state
-  let _private = 0;
-  
-  function publicMethod() { return ++_private; }
-  
-  // expose only public API
-  return { publicMethod };
-})();
-```
-
-### Simulation-First Architecture
-The simulation layer allows:
-- Full feature demos without native hardware
-- Offline development and testing
-- CI/CD testing without WiFi access
-- Progressive enhancement to native APIs
+No test needs Wi-Fi hardware or network access.

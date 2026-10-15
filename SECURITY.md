@@ -2,8 +2,6 @@
 
 ## Supported Versions
 
-We actively maintain the following versions:
-
 | Version | Supported |
 |---------|-----------|
 | 1.x     | ✅ Yes    |
@@ -13,40 +11,39 @@ We actively maintain the following versions:
 
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
-Instead, please report security vulnerabilities via one of these methods:
+Report privately via
+[GitHub Security Advisories](https://github.com/qmmughal/wifi-monitor/security/advisories/new)
+with the affected version, steps to reproduce, impact, and a suggested fix if you have one.
+We aim to acknowledge reports within a few days. This is a volunteer project, so no fixed
+response times are guaranteed. Reporters are credited unless they prefer otherwise.
 
-1. **GitHub Security Advisories** (preferred):
-   [Report a Vulnerability](https://github.com/qmmughal/wifi-monitor/security/advisories/new)
+## Scope and threat model
 
-2. **Email**: security@qmmughal.example.com
-   - Subject: `[SECURITY] WiFi Monitor - Brief Description`
-   - Include: steps to reproduce, impact assessment, and suggested fix if known
+WiFi Monitor consists of a Python CLI, a local HTTP server (`wifi-monitor serve`) and a
+browser dashboard. It reads Wi-Fi information through OS tools and never changes system,
+network, firewall, DNS or router settings.
 
-### What to include
+Untrusted inputs include **SSIDs and other broadcast data** (anyone nearby can choose an SSID),
+OS command output, and HTTP requests to the local server.
 
-- Type of vulnerability (XSS, data exposure, dependency issue, etc.)
-- Steps to reproduce
-- Affected version(s)
-- Potential impact
-- Suggested mitigation or fix
+Current protections:
 
-### What to expect
+- OS commands are run with argument lists (never a shell), with timeouts and output limits.
+  No API or CLI parameter is passed to a command; `ping` only accepts validated IP literals.
+- The dashboard escapes all dynamic HTML; the CLI escapes Rich markup and strips control
+  characters from SSIDs. CSV exports neutralise spreadsheet formulas.
+- `wifi-monitor serve` binds to `127.0.0.1` by default and refuses other addresses unless
+  `--allow-remote` is given. It rejects non-loopback `Host` headers (DNS rebinding), sends no
+  CORS headers, sets a Content-Security-Policy on the page, blocks path traversal, and only
+  exposes read-only data. The single POST endpoint (run diagnostics) requires a custom header
+  and an absent or loopback `Origin`, and allows one run at a time.
+- No credentials are used or stored.
 
-- **24 hours**: Initial acknowledgment
-- **72 hours**: Assessment and severity classification
-- **7 days**: Patch development begins
-- **14 days**: Patch released (if confirmed critical)
+Known limitations:
 
-We follow [responsible disclosure](https://en.wikipedia.org/wiki/Responsible_disclosure) and will credit reporters in release notes unless they prefer anonymity.
+- The local API is unauthenticated. Any process running as your user (or on your network, if
+  you use `--allow-remote`) can read Wi-Fi details from it.
+- The dashboard loads Chart.js and fonts from public CDNs.
 
-## Scope
-
-WiFi Monitor is a **client-side web application** that:
-- Runs entirely in the browser
-- Does not transmit data to external servers
-- Stores data only in `localStorage`
-
-Out-of-scope for security reports:
-- Theoretical attacks requiring physical access to the device
-- Attacks on third-party dependencies with no exploit path
-- Social engineering or phishing
+Out of scope: attacks requiring prior code execution as the user, physical access, or social
+engineering.

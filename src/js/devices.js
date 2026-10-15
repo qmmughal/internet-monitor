@@ -1,6 +1,9 @@
 /**
  * devices.js — Device discovery for WiFi Monitor
- * Simulates ARP scan with vendor OUI lookup
+ *
+ * Real device discovery is not implemented yet (see docs/IMPLEMENTATION_PLAN.md).
+ * In demo modes this module generates SIMULATED devices, labelled as such.
+ * With live data it reports the feature as unavailable instead of inventing devices.
  */
 
 'use strict';
@@ -62,8 +65,18 @@ const DeviceDiscovery = (() => {
     },
   ];
 
-  /** Simulate an ARP/network scan */
+  const UNAVAILABLE_MSG = 'Live device discovery is not implemented yet. WiFi Monitor will not show invented devices.';
+
+  function isAvailable() {
+    return DataSource.isSimulated();
+  }
+
+  /** Generate SIMULATED devices (demo modes only). */
   function discover() {
+    if (!isAvailable()) {
+      _devices = [];
+      return Promise.reject(new Error(UNAVAILABLE_MSG));
+    }
     return new Promise(resolve => {
       setTimeout(() => {
         const count = Sim.int(3, 10);
@@ -76,10 +89,11 @@ const DeviceDiscovery = (() => {
           id: 'gateway',
           name: 'Router / Gateway',
           ip: `${subnet}.1`,
-          mac: '00:1A:2B:3C:4D:5E',
+          mac: '02:00:00:00:00:fe',
           vendor: 'NETGEAR',
           type: 'router',
           status: 'online',
+          simulated: true,
           latency: Sim.int(1, 5),
           icon: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M10.54 16.1a6 6 0 0 1 2.92 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>`,
         });
@@ -91,12 +105,12 @@ const DeviceDiscovery = (() => {
           usedIPs.add(ip);
 
           const dt = Sim.pick(DEVICE_TYPES);
-          const mac = Sim.mac();
+          const mac = `02:${Sim.mac().slice(3)}`; // locally administered: cannot collide with a real vendor
           const isNew = !_knownDevices.has(mac);
 
           if (isNew) {
             _knownDevices.add(mac);
-            EventBus.emit('newDevice', { name: dt.name, ip, mac });
+            EventBus.emit('newDevice', { name: dt.name, ip, mac, simulated: true });
           }
 
           devices.push({
@@ -109,6 +123,7 @@ const DeviceDiscovery = (() => {
             status: 'online',
             latency: Sim.int(2, 30),
             icon: dt.icon,
+            simulated: true,
           });
         }
 
@@ -131,25 +146,32 @@ const DeviceDiscovery = (() => {
         )
       : devices;
 
+    if (!isAvailable()) {
+      grid.innerHTML = `<div class="empty-state">${escapeHTML(UNAVAILABLE_MSG)}<br>`
+        + 'Restart with <code>wifi-monitor serve --demo</code> to preview the interface with simulated devices.</div>';
+      return;
+    }
     if (!filtered.length) {
       grid.innerHTML = '<div class="empty-state">No devices match your filter</div>';
       return;
     }
 
+    // d.icon comes from the built-in DEVICE_TYPES table above, never from scan data.
     grid.innerHTML = filtered.map(d => `
-      <div class="device-card" data-id="${d.id}">
+      <div class="device-card" data-id="${escapeHTML(d.id)}">
+        ${d.simulated ? '<span class="sim-tag">Simulated</span>' : ''}
         <div class="device-icon">${d.icon}</div>
-        <div class="device-name">${d.name}</div>
-        <div class="device-ip">${d.ip}</div>
-        <div class="device-mac">${d.mac}</div>
-        <div class="device-vendor">${d.vendor}</div>
+        <div class="device-name">${escapeHTML(d.name)}</div>
+        <div class="device-ip">${escapeHTML(d.ip)}</div>
+        <div class="device-mac">${escapeHTML(d.mac)}</div>
+        <div class="device-vendor">${escapeHTML(d.vendor)}</div>
         <div class="device-status">
           <div class="device-status-dot"></div>
-          Online · ${d.latency}ms
+          Online · ${escapeHTML(d.latency)}ms
         </div>
       </div>
     `).join('');
   }
 
-  return { discover, renderDevices, getDevices: () => _devices };
+  return { discover, renderDevices, isAvailable, getDevices: () => _devices };
 })();

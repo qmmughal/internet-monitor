@@ -65,42 +65,21 @@ function expect(val) {
   };
 }
 
-/* ── Inline implementations for testing (no DOM required) ─────── */
+/* ── Load the shipped browser modules (no DOM required) ────────── */
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
 
-function dbmToPercent(dbm) {
-  if (dbm >= -50) return 100;
-  if (dbm <= -100) return 0;
-  return Math.round(((dbm + 100) / 50) * 100);
-}
+const { SignalUtils, escapeHTML, arrayToCSV } = require('../src/js/utils.js');
+const { dbmToPercent, qualityLabel, qualityClass, channelBand } = SignalUtils;
 
-function qualityLabel(dbm) {
-  if (dbm >= -50) return 'Excellent';
-  if (dbm >= -60) return 'Good';
-  if (dbm >= -70) return 'Fair';
-  return 'Poor';
-}
-
-function qualityClass(dbm) {
-  if (dbm >= -50) return 'excellent';
-  if (dbm >= -60) return 'good';
-  if (dbm >= -70) return 'fair';
-  return 'poor';
-}
-
-function channelBand(ch) {
-  if (ch >= 1 && ch <= 14) return '2.4 GHz';
-  if (ch >= 36 && ch <= 177) return '5 GHz';
-  return 'Unknown';
-}
-
-function arrayToCSV(headers, rows) {
-  const header = headers.join(',');
-  const body = rows.map(r => r.map(c => `"${c}"`).join(',')).join('\n');
-  return `${header}\n${body}`;
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+/** Load browser scripts into one sandbox and return the named globals. */
+function loadBrowserModules(files, names, extraGlobals = {}) {
+  const ctx = vm.createContext({ console, setTimeout, clearTimeout, ...extraGlobals });
+  for (const f of files) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname, '..', 'src', 'js', f), 'utf8'), ctx, { filename: f });
+  }
+  return vm.runInContext(`({ ${names.join(', ')} })`, ctx);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -178,6 +157,53 @@ test('percent is always 0–100', () => {
       throw new Error(`Out of range at ${dbm}: ${p}`);
     }
   }
+});
+
+
+/* ── Frequency maths (regression: 5 GHz used to be wrong) ─────── */
+console.log('\nSignalUtils.channelToMHz / channelToFreq');
+test('ch 1 is 2412 MHz', () => expect(SignalUtils.channelToMHz(1)).toBe(2412));
+test('ch 14 is 2484 MHz', () => expect(SignalUtils.channelToMHz(14)).toBe(2484));
+test('ch 36 is 5180 MHz', () => expect(SignalUtils.channelToMHz(36)).toBe(5180));
+test('ch 149 is 5745 MHz', () => expect(SignalUtils.channelToMHz(149)).toBe(5745));
+test('6 GHz ch 37 is 6135 MHz', () => expect(SignalUtils.channelToMHz(37, '6 GHz')).toBe(6135));
+test('label for ch 36', () => expect(SignalUtils.channelToFreq(36)).toBe('5.180 GHz'));
+test('channel 181 alone is ambiguous', () => expect(channelBand(181)).toBe(null));
+
+/* ── HTML escaping ───────────────────────────────────────────── */
+console.log('\nescapeHTML');
+test('escapes tags and quotes', () =>
+  expect(escapeHTML(`<img src=x onerror="a">'`)).toBe('&lt;img src=x onerror=&quot;a&quot;&gt;&#39;'));
+test('null becomes empty string', () => expect(escapeHTML(null)).toBe(''));
+test('numbers are stringified', () => expect(escapeHTML(-60)).toBe('-60'));
+
+/* ── CSV safety ──────────────────────────────────────────────── */
+console.log('\narrayToCSV safety');
+const csvRow = cells => arrayToCSV(['X'], [cells]).split('\n')[1];
+test('doubles embedded quotes', () => expect(csvRow(['a"b'])).toBe('"a""b"'));
+test('neutralises formula injection', () => expect(csvRow(['=HYPERLINK("x")'])).toBe(`"'=HYPERLINK(""x"")"`));
+test('keeps negative numbers intact', () => expect(csvRow([-60])).toBe('"-60"'));
+
+/* ── Scanner rendering (XSS regression with attacker-controlled SSIDs) ── */
+console.log('\nNetworkScanner.renderNetworkRow');
+const { NetworkScanner } = loadBrowserModules(['utils.js', 'scanner.js'], ['NetworkScanner'], {
+  DataSource: { usesApi: () => true },
+  document: { getElementById: () => null },
+  getComputedStyle: () => ({ getPropertyValue: () => '' }),
+});
+const evil = '<img src=x onerror=alert(1)>';
+const row = NetworkScanner.renderNetworkRow({
+  ssid: evil, bssid: '02:00:00:00:00:01', channel: 6, band: '2.4 GHz', security: '<b>WPA2</b>',
+  signal: -60, signalMode: 'estimated', quality: 80, connected: false,
+});
+test('SSID is escaped', () => expect(row.includes(evil)).toBe(false));
+test('escaped SSID is present', () => expect(row.includes('&lt;img src=x onerror=alert(1)&gt;')).toBe(true));
+test('security text is escaped', () => expect(row.includes('<b>WPA2</b>')).toBe(false));
+test('estimated signal is marked', () => expect(row.includes('≈')).toBe(true));
+const hiddenRow = NetworkScanner.renderNetworkRow({ ssid: null, bssid: null, channel: null, band: null, signal: null, quality: null });
+test('hidden SSID and missing signal render placeholders', () => {
+  expect(hiddenRow.includes('&lt;hidden&gt;')).toBe(true);
+  expect(hiddenRow.includes('null')).toBe(false);
 });
 
 /* ═══════════════════════════════════════════════════════════════

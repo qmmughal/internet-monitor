@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wifi-monitor"
+version = "1.1.0.dev0"
+description = "Local-first Wi-Fi monitoring and connectivity diagnostics (CLI, dashboard and read-only local API)"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.9"
+authors = [{ name = "WiFi Monitor Contributors" }]
+keywords = ["wifi", "network", "diagnostics", "monitoring", "netsh", "nmcli"]
+classifiers = [
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS",
+  "Programming Language :: Python :: 3",
+  "Topic :: System :: Networking :: Monitoring",
+]
+# No required runtime dependencies: everything works with the standard library.
+dependencies = []
+
+[project.optional-dependencies]
+rich = ["rich>=13"]
+dev = ["rich>=13", "pytest>=7"]
+
+[project.scripts]
+wifi-monitor = "wifi_monitor.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/qmmughal/wifi-monitor"
+Issues = "https://github.com/qmmughal/wifi-monitor/issues"
+
+[tool.setuptools]
+packages = ["wifi_monitor", "wifi_monitor.providers"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
